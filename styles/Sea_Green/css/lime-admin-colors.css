@@ -1,3 +1,32 @@
+/**
+ * Inicio Adición de estilo - CNST
+ * Andrés David Montoya Aguirre - CSNT - 10/04/2016
+ */
+.btn-primary-bootstrap{
+  color: #fff !important;
+  background-color: #0275d8 !important;
+  border-color: #0275d8 !important;
+}
+.btn-primary-bootstrap:hover{
+  color: #fff !important;
+  background-color: #025aa5 !important;
+  border-color: #01549b !important;
+}
+.btn-primary-bootstrap:active{
+  color: #fff !important;
+  background-color: #025aa5 !important;
+  background-image: none !important;
+  border-color: #01549b !important;
+}
+.btn-primary-bootstrap:focus{
+  color: #fff !important;
+  background-color: #025aa5 !important;
+  border-color: #01549b !important;
+}
+/**
+ * Fin Adición de estilo -  CSNT
+ */
+
 #ui-datepicker-div {
   background-color: #ffffff;
   border: 1px solid #cccccc; }

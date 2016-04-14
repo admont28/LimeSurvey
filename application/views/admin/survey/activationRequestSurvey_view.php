@@ -1,4 +1,11 @@
-<?php if ((isset($failedcheck) && $failedcheck) || (isset($failedgroupcheck) && $failedgroupcheck)): ?>
+<?php 
+/**
+ * Vista para solicitar la activación de una encuesta.
+ * Es llamada por SurveyAdmin::request
+ * It's called from SurveyAdmin::request
+ *
+ */
+if ((isset($failedcheck) && $failedcheck) || (isset($failedgroupcheck) && $failedgroupcheck)): ?>
 <div class="side-body">
     <div class="row welcome survey-action">
         <div class="col-sm-12 content-right">
@@ -41,19 +48,22 @@
 <?php else:?>
 
 <div class='side-body container message-box col-sm-10' >
-    <div class='row'>
+
+   <div class='row'>
         <h2 class='col-sm-7 col-sm-offset-2 text-center'><?php eT("Warning: Please read this carefully before proceeding!"); ?></h2>
     </div>
     <div class='row'>
-        <p class="lead col-sm-7 col-sm-offset-2 text-center">
-            <?php eT("You should only activate a survey when you are absolutely certain that your survey setup is finished and will not need changing."); ?>
+        <p class="lead col-sm-12 col-xs-12 text-center">
+            <?php //eT("You should only activate a survey when you are absolutely certain that your survey setup is finished and will not need changing."); ?>
+            Debe solicitar la activación de una encuesta sólo cuando esté absolutamente seguro(a) de que la configuración de la misma es correcta y que no habrá más cambios. por favor revisa esto antes de continuar
         </p>
     </div>
+
     <div class='row'>
-        <p class="col-sm-7 col-sm-offset-2">
+        <p class="col-sm-12 text-center">
             <?php eT("Once a survey is activated you can no longer:"); ?>
         </p>
-        <div class='col-sm-6 col-sm-offset-4'>
+        <div class='col-sm-8 col-sm-offset-5'>
             <ul class=''>
                 <li><?php eT("Add or delete groups"); ?></li>
                 <li><?php eT("Add or delete questions"); ?></li>
@@ -61,14 +71,12 @@
             </ul>
         </div>
     </div>
-
     <div class='row'>
         <div class="col-sm-7 col-sm-offset-2 text-center"><p><strong>
             <?php eT("Additionally the following settings cannot be changed when the survey is active.");?>
         </strong><br><?php eT("Please check these settings now:");?></p></div>
     </div>
-
-    <?php echo CHtml::form(array("admin/survey/sa/activate/surveyid/{$surveyid}/"), 'post', array('class'=>'form-horizontal')); ?>
+    <?php echo CHtml::form(array($urlsubmit), 'post', array('class'=>'form-horizontal')); ?>
         <div class='row'>
             <div class="col-sm-3 col-sm-offset-3">
                 <div class="row">
@@ -197,35 +205,31 @@
                 </div>
             </div>
         </div>
-        <?php if(isset($issuperadminandowner) && !$issuperadminandowner): ?>
-            <!-- Campo de gobernanza -->
-            <div class="row">
-                <div class="col-sm-3 col-sm-offset-3">
-                    <div class="row">
-                        <div class='form-group'>
-                            <label class='control-label col-sm-6' for='request_response'>Respuesta a la solicitud:</label>
-                            <div class='col-sm-6'>
-                                <textarea rows="4" cols="50" name="request_response" placeholder="Responde a la solicitud del dueño de la encuesta, si no responde se creará una respuesta por defecto"></textarea>
-                            </div>
+        <div class="row">
+            <div class="col-sm-3 col-sm-offset-3">
+                <div class="row">
+                    <div class='form-group'>
+                        <label class='control-label col-sm-6' for='justification'>Justificación:</label>
+                        <div class='col-sm-6'>
+                            <textarea rows="4" cols="50" name="justification" placeholder="Justifica la activación de la encuesta" required="required"></textarea>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- Campo de gobernanza -->
-            <div class="row">
-                <div class="col-sm-3 col-sm-offset-3">
-                    <div class="row">
-                        <div class='form-group'>
-                            <label class='control-label col-sm-6' for='owner'>Autor:</label>
-                            <div class='col-sm-6'>
-                                <input type="text" name="country" value="<?php echo $owner[0]['full_name']; ?>" readonly required>
-                            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-3 col-sm-offset-3">
+                <div class="row">
+                    <div class='form-group'>
+                        <label class='control-label col-sm-6' for='owner'>Autor:</label>
+                        <div class='col-sm-6'>
+                            <input type="text" name="country" value="<?php echo $owner[0]['full_name']; ?>" readonly required>
                         </div>
                     </div>
                 </div>
             </div>
-        <?php endif; ?>
-        
+        </div>
+
         <div class='row'>
 
         <p class='col-sm-7 col-sm-offset-2'>
@@ -233,9 +237,10 @@
         </p>
     </div>
     <div class='row'>
-        <div class='col-sm-6 col-sm-offset-4'>
-            <input type='hidden' name='ok' value='Y' />
-            <input type='submit' class="btn btn-success btn-lg " value="<?php eT("Save & activate survey"); ?>" />
+        <div class='col-sm-7 col-sm-offset-5'>
+            <input type='hidden' name='information' value='Y' />
+            <!-- <input type='submit' class="btn btn-default btn-lg " value="<?php eT("Save / Activate survey"); ?>" /> -->
+            <input type='submit' class="btn btn-default btn-lg " value="Solicitar activación" />
             <a class="btn btn-default btn-lg" href="<?php echo $this->createUrl("admin/survey/sa/view/surveyid/$surveyid"); ?>" role="button">
             <?php eT("Cancel"); ?>
             </a>

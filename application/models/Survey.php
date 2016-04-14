@@ -142,6 +142,7 @@ class Survey extends LSActiveRecord
             'defaultlanguage' => array(self::BELONGS_TO, 'SurveyLanguageSetting', array('language' => 'surveyls_language', 'sid' => 'surveyls_survey_id'), 'together' => true),
             'owner' => array(self::BELONGS_TO, 'User', 'owner_id'),
             'groups' => array(self::HAS_MANY, 'QuestionGroup', 'sid'),
+            'governance' => array(self::HAS_ONE, 'GovernanceSurvey', 'gosu_pk')
             // ????????
             // 'owner' => array(self::BELONGS_TO, 'User', '', 'on' => "$alias.owner_id = owner.uid"),
 
@@ -616,8 +617,18 @@ class Survey extends LSActiveRecord
 
     public function getCreationDate()
     {
-        $dateformatdata=getDateFormatData(Yii::app()->session['dateformat']);
-        return convertDateTimeFormat($this->datecreated, 'Y-m-d', $dateformatdata['phpdate']);
+        /*
+         * -------------------------------------------------------------------------------------
+         * MODIFICACIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 04/04/2016
+         * Número de lineas: 3 
+         * Se modifica esta línea para que al momento de mostrar la fecha de creación no se muestre
+         * de la forma Y.m.d sino de la forma Y-m-d que es como está en la base de datos.
+         * Se comenta la línea del dateformatdata y return converDateTimeFormat.
+         * -------------------------------------------------------------------------------------
+         */
+        //$dateformatdata=getDateFormatData(Yii::app()->session['dateformat']);
+        //return convertDateTimeFormat($this->datecreated, 'Y-m-d', $dateformatdata['phpdate']);
+        return $this->datecreated;
     }
 
     public function getAnonymizedResponses()
@@ -785,6 +796,25 @@ class Survey extends LSActiveRecord
 
     public function getbuttons()
     {
+        /*
+         * -------------------------------------------------------------------------------------
+         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 10/04/2016
+         * Número de lineas: 10
+         * Primero se obtiene el id del usuario logueado.
+         * Luego se verifica si el usuario logueado es super administrador 
+         * Por último se verifica si puede editar la estructura de la encuesta. es decir, si no existe en la tabla de governanza o si su estado es requiere ajustes podrá modificar.
+         * -------------------------------------------------------------------------------------
+         */
+        $loginID = Yii::app()->session['loginID'];
+        $issuperadmin = (Permission::model()->hasGlobalPermission('superadmin', 'read', $loginID));
+        $governancesurvey = GovernanceSurvey::model()->findByPk($this->sid);
+        $canmodify = false;
+        if (is_null($governancesurvey)) {
+            $canmodify = true;
+        }
+        else if($governancesurvey->gosu_requeststate=="requiere ajustes"){
+            $canmodify = true;
+        }
         $sSummaryUrl  = App()->createUrl("/admin/survey/sa/view/surveyid/".$this->sid);
         $sEditUrl     = App()->createUrl("/admin/survey/sa/editlocalsettings/surveyid/".$this->sid);
         $sDeleteUrl   = App()->createUrl("/admin/survey/sa/delete/surveyid/".$this->sid);
@@ -793,7 +823,20 @@ class Survey extends LSActiveRecord
         $sAddquestion = App()->createUrl("/admin/questions/sa/newquestion/surveyid/".$this->sid);;
 
         $button = '<a class="btn btn-default" href="'.$sSummaryUrl.'" role="button" data-toggle="tooltip" title="'.gT('Survey summary').'"><span class="glyphicon glyphicon-list-alt" ></span></a>';
-        $button .= '<a class="btn btn-default" href="'.$sEditUrl.'" role="button" data-toggle="tooltip" title="'.gT('General settings & texts').'"><span class="glyphicon glyphicon-pencil" ></span></a>';
+        /*
+         * -------------------------------------------------------------------------------------
+         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 10/04/2016
+         * Número de lineas: 6
+         * Si no puede modificar y no es super administrador, muestro un botón pero sin acciones,
+         * De lo contrario muestro el botón con acciones
+         * -------------------------------------------------------------------------------------
+         */
+        if(!$canmodify && !$issuperadmin){
+            $button .= '<a class="btn btn-default" href="#" role="button" data-toggle="tooltip" title="No puede editar la configuración general y textos mientras la encuesta este pendiente de revisión"><span class="glyphicon glyphicon-pencil" ></span></a>';
+        }
+        else {
+            $button .= '<a class="btn btn-default" href="'.$sEditUrl.'" role="button" data-toggle="tooltip" title="'.gT('General settings & texts').'"><span class="glyphicon glyphicon-pencil" ></span></a>';
+        }
         $button .= '<a class="btn btn-default" href="'.$sDeleteUrl.'" role="button" data-toggle="tooltip" title="'.gT('Delete').'"><span class="text-danger glyphicon glyphicon-trash" ></span></a>';
 
         if(Permission::model()->hasSurveyPermission($this->sid, 'statistics', 'read') && $this->active=='Y' )
@@ -804,13 +847,25 @@ class Survey extends LSActiveRecord
         if($this->active!='Y')
         {
             $groupCount = QuestionGroup::model()->countByAttributes(array('sid' => $this->sid, 'language' => $this->language)); //Checked
-            if($groupCount > 0)
-            {
-                $button .= '<a class="btn btn-default" href="'.$sAddquestion.'" role="button" data-toggle="tooltip" title="'.gT('Add new question').'"><span class="icon-add text-success" ></span></a>';
+            /*
+             * -------------------------------------------------------------------------------------
+             * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 10/04/2016
+             * Número de lineas: 4 
+             * Se verifica si puede editar la estructura de la encuesta, si no es así, se muestra un botón con el titulo de que no puede agregar preguntas o grupos de preguntas, si puede modificar se deja como estaba originalmente.
+             * -------------------------------------------------------------------------------------
+             */
+            if(!$canmodify && !$issuperadmin){
+                $button .= '<a class="btn btn-default" href="#" role="button" data-toggle="tooltip"  title="No puede agregar grupos ni preguntas porque el estado de la encuesta es pendiende de revisión"><span class="icon-add text-success" ></span></a>';
             }
-            else
-            {
-                $button .= '<a class="btn btn-default" href="'.$sAddGroup.'" role="button" data-toggle="tooltip" title="'.gT('Add new group').'"><span class="icon-add text-success" ></span></a>';
+            else{
+                if($groupCount > 0)
+                {
+                    $button .= '<a class="btn btn-default" href="'.$sAddquestion.'" role="button" data-toggle="tooltip" title="'.gT('Add new question').'"><span class="icon-add text-success" ></span></a>';
+                }
+                else
+                {
+                    $button .= '<a class="btn btn-default" href="'.$sAddGroup.'" role="button" data-toggle="tooltip" title="'.gT('Add new group').'"><span class="icon-add text-success" ></span></a>';
+                }
             }
         }
 
@@ -876,6 +931,15 @@ class Survey extends LSActiveRecord
         $criteria2->compare($sid_reference, $this->searched_value, true, 'OR');
         $criteria2->compare('surveys_languagesettings.surveyls_title', $this->searched_value, true, 'OR');
         $criteria2->compare('t.admin', $this->searched_value, true, 'OR');
+        /*
+         * -------------------------------------------------------------------------------------
+         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 04/04/2016
+         * Número de lineas: 2 
+         * Se adiciona un nuevo campo para la búsqueda, ahora se puede buscar por fecha de creación
+         * -------------------------------------------------------------------------------------
+         */
+        $datecreated_reference = (Yii::app()->db->getDriverName() == 'pgsql' ?' t.datecreated::varchar' : 't.datecreated');
+        $criteria2->compare($datecreated_reference, $this->searched_value, true, 'OR');
 
         // Active filter
         if(isset($this->active))

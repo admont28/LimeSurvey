@@ -81,12 +81,26 @@ class Index extends Survey_Common_Action
         }
 
         $aData['countSurveyList'] = count(getSurveyList(true));
-
         // We get the home page display setting
         $aData['bShowLogo'] = (getGlobalSetting('show_logo')=="show");
         $aData['bShowLastSurveyAndQuestion'] = (getGlobalSetting('show_last_survey_and_question')=="show");
         $aData['iBoxesByRow']=(int) getGlobalSetting('boxes_by_row');
         $aData['sBoxesOffSet']=(string) getGlobalSetting('boxes_offset');
+        /*
+         * ----------------------------------------------------------------------------------------------
+         * ADICIÓN DE CÓDIGO REALIZADA POR: ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 10/04/2016
+         * Número de líneas: 6
+         * Se captura el id del usuario logueado.
+         * Se crea un CDBCriteria para agregar una condición a la consulta de la base de datos, donde se trae todas las encuestas del usuario logueado.
+         * Si el usuario logueado tiene al menos 1 encuesta creada entonces no se muestra el mensaje de políticas de gesen-uq, si no posee ninguna encuesta, se muestra el mensaje de políticas de gesen-uq.
+         * ----------------------------------------------------------------------------------------------
+         */
+        $loginID = Yii::app()->session['loginID'];
+        $criteria = new CDbCriteria();
+        $criteria->addCondition("owner_id=:owner");
+        $criteria->params = array(':owner' => $loginID);
+        $surveys_user_logged = Survey::model()->findAll($criteria);
+        $aData['show_politices'] = isset($surveys_user_logged) && sizeof($surveys_user_logged) == 0;
         $this->_renderWrappedTemplate('super', 'welcome', $aData);
     }
 

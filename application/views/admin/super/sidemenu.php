@@ -103,7 +103,9 @@
                                         'sidemenu' => $sidemenu,
                                         'aGroups' => $aGroups,
                                         'iSurveyId' => $surveyid,
-                                        'bSurveyIsActive' => $bSurveyIsActive
+                                        'bSurveyIsActive' => $bSurveyIsActive,
+                                        'canmodify' => $canmodify,
+                                        'issuperadmin' => $issuperadmin
                                     )); ?>
 
                                     <?php if($permission):?>
@@ -127,11 +129,11 @@
 
                                     <!-- Organize questions -->
                                     <?php if($surveycontent):?>
-                                        <?php if ($activated):?>
+                                        <?php if ($activated || (!$canmodify && !$issuperadmin) ):?>
                                             <li class="disabled">
                                                 <a href='#'>
                                                     <span class="icon-organize"></span>
-                                                    <?php eT("Question group/question organizer disabled"); ?> - <?php eT("This survey is currently active."); ?>
+                                                    <?php eT("Question group/question organizer disabled"); ?> - <?php eT("This survey is currently active."); ?> - o no tienes permiso para hacer esto
                                                 </a>
                                             </li>
                                         <?php else: ?>
@@ -150,12 +152,21 @@
 
                     <!-- Token -->
                     <?php if($tokenmanagement):?>
-                        <li id="tokensidemenu" class="toWhite  <?php if( isset($sidemenu["token_menu"]) ) echo 'active'; ?> ">
-                            <a href="<?php echo $this->createUrl("admin/tokens/sa/index/surveyid/$surveyid"); ?>">
-                                <span class="glyphicon glyphicon-user"></span>
-                                <?php eT("Token management");?>
-                            </a>
-                        </li>
+                        <?php if (!$canmodify && !$issuperadmin):?>
+                            <li class="disabled">
+                                <a href='#'>
+                                    <span class="glyphicon glyphicon-user"></span>
+                                     <?php eT("Token management");?> deshabilitado - no tienes permiso para hacer esto.
+                                </a>
+                            </li>
+                        <?php else: ?>
+                            <li id="tokensidemenu" class="toWhite  <?php if( isset($sidemenu["token_menu"]) ) echo 'active'; ?> ">
+                                <a href="<?php echo $this->createUrl("admin/tokens/sa/index/surveyid/$surveyid"); ?>">
+                                    <span class="glyphicon glyphicon-user"></span>
+                                    <?php eT("Token management");?>
+                                </a>
+                            </li>
+                        <?php endif; ?>
                     <?php endif; ?>
 
                     <!-- Survey List -->

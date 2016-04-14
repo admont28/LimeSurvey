@@ -319,7 +319,26 @@ class AdminController extends LSYii_Controller
         $sOutput = $this->renderPartial("/admin/super/header", $aData, true);
 
         // Define images url
-        define('LOGO_URL', App()->getAssetManager()->publish( dirname(Yii::app()->request->scriptFile).'/styles/'.$oAdmintheme->name.'/images/logo.png'));
+        /*
+         * ----------------------------------------------------------------------------------------------
+         * ORIGINAL
+         * ----------------------------------------------------------------------------------------------
+         * define('LOGO_URL', App()->getAssetManager()->publish( dirname(Yii::app()->request->scriptFile).'/styles/'.$oAdmintheme->name.'/images/logo.png'));
+         */
+        /*
+         * ----------------------------------------------------------------------------------------------
+         * MODIFICACIÓN REALIZADA POR: ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 15/03/2016
+         * Número de líneas: 5
+         * Se carga el helper globalsettings para agregar una nueva configuración global a la base de datos
+         * Se define la url base para las imagenes PATH_LIMESURVEY/images/
+         * Allí se adicionará la imagen del logo de la Universidad y la imagen del logo de GESEN
+         * ----------------------------------------------------------------------------------------------
+         */
+        Yii::app()->loadHelper('globalsettings');
+        $adminimagebaseurl = Yii::app()->getBaseUrl(true)."/images/";
+        setGlobalSetting('adminimagebaseurl', $adminimagebaseurl);
+        define('IMAGE_BASE_URL', Yii::app()->getConfig('adminimagebaseurl'));
+        define('LOGO_URL',IMAGE_BASE_URL."LOGO-UQ.png");
 
         // Define presentation text on welcome page
         if($oAdmintheme->config->metadatas->presentation)
@@ -328,7 +347,19 @@ class AdminController extends LSYii_Controller
         }
         else
         {
-            define('PRESENTATION', gT('This is the LimeSurvey admin interface. Start to build your survey from here.'));
+            /*
+             * ----------------------------------------------------------------------------------------------
+             * ORIGINAL
+             * ----------------------------------------------------------------------------------------------
+             * define('PRESENTATION', gT('This is the LimeSurvey admin interface. Start to build your survey from here.'));
+             */
+            /*
+             * ----------------------------------------------------------------------------------------------
+             * MODIFICACIÓN REALIZADA POR: ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 15/03/2016
+             * Número de líneas: 1
+             * ----------------------------------------------------------------------------------------------
+             */
+            define('PRESENTATION', gT('Esta es la interfaz de administración GESEN-UQ. Comience a construir su encuesta de aquí.'));
         }
 
         if ($return)
