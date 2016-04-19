@@ -595,7 +595,12 @@
                         </ul>
                     </div>
                 <?php endif;?>
-
+                
+                <!-- Teacher Evaluation Export -->
+                <a class="btn btn-default" href="<?php echo Yii::App()->createUrl('admin/statistics/sa/exportteacherevaluation/surveyid/'.$surveyid);?>" role="button">
+                    <span class="icon-display_export"></span>
+                    Exportar evaluación docente
+                </a>
                 <?php if($permission):?>
                     <!-- List Groups -->
                         <!-- admin/survey/sa/view/surveyid/838454 listquestiongroups($iSurveyID)-->

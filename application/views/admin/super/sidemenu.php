@@ -152,21 +152,12 @@
 
                     <!-- Token -->
                     <?php if($tokenmanagement):?>
-                        <?php if (!$canmodify && !$issuperadmin):?>
-                            <li class="disabled">
-                                <a href='#'>
-                                    <span class="glyphicon glyphicon-user"></span>
-                                     <?php eT("Token management");?> deshabilitado - no tienes permiso para hacer esto.
-                                </a>
-                            </li>
-                        <?php else: ?>
                             <li id="tokensidemenu" class="toWhite  <?php if( isset($sidemenu["token_menu"]) ) echo 'active'; ?> ">
                                 <a href="<?php echo $this->createUrl("admin/tokens/sa/index/surveyid/$surveyid"); ?>">
                                     <span class="glyphicon glyphicon-user"></span>
                                     <?php eT("Token management");?>
                                 </a>
                             </li>
-                        <?php endif; ?>
                     <?php endif; ?>
 
                     <!-- Survey List -->

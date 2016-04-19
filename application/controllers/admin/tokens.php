@@ -28,15 +28,6 @@ class tokens extends Survey_Common_Action
     */
     function index($iSurveyId)
     {
-        /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
-         * Número de lineas: 1
-         * Se verifica si el usuario tiene permiso de modificación de la encuesta.
-         * Si no tiene es redireccionado a la página principal de la encuesta.
-         * -------------------------------------------------------------------------------------
-         */
-        $this->_verify_permission_modification($iSurveyId);
         $iSurveyId = sanitize_int($iSurveyId);
         //// TODO : check if it does something different than the model function
         $thissurvey = getSurveyInfo($iSurveyId);

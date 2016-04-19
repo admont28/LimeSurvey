@@ -1436,9 +1436,10 @@ class Survey_Common_Action extends CAction
     }
 
     /**
-     * [_verify_permission_modification description]
-     * @param  [type] $iSurveyID [description]
-     * @return [type]            [description]
+     * Verifica si el usuario logueado tiene permisos de modificación sobre la encuesta pasada por parámetro.
+     * @author Andrés David Montoya Aguirre - CSNT - 15/04/2016
+     * @param  int $iSurveyID Identificador único de la encuesta.
+     * @return void            Si el usuario no tiene permisos de modificación sobre la encuesta, es redireccionado a la pantalla de administración de la encuesta.
      */
     protected function _verify_permission_modification($iSurveyID){
         /*
@@ -1464,9 +1465,10 @@ class Survey_Common_Action extends CAction
     }
 
     /**
-     * [_is_superadmin_and_owner description]
-     * @param  [type]  $iSurveyID [description]
-     * @return boolean            [description]
+     * Verifica que el usuario logueado sea super administrador y a la vez dueño de la encuesta pasada por parámetro.
+     * @author Andrés David Montoya Aguirre - CSNT - 15/04/2016
+     * @param  int  $iSurveyID Identificador único de la encuesta.
+     * @return boolean            Retorna true si es super admin y a la vez dueño de la encuesta, de lo contrario, retorna false.
      */
     protected function _is_superadmin_and_owner($iSurveyID){
         $loginID = Yii::app()->session['loginID'];
