@@ -6,11 +6,11 @@
  * @var $dataForConfigMenu
  */
 ?>
-
+<div>
 <!-- admin menu bar -->
-<nav class="navbar">
+<nav class="navbar" style="margin-bottom: -5px;">
   <div class="navbar-header">
-      <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#small-screens-menus">
+      <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#small-screens-menus" style="padding-bottom: 11px;">
             <span class="sr-only">Toggle navigation</span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
@@ -124,6 +124,11 @@
                     <li>
                         <a href="<?php echo $this->createUrl("/admin/user/sa/personalsettings"); ?>"><?php eT("Edit your personal preferences");?></a>
                     </li>
+                    <!-- Manuales de usuario -->
+                    <li>
+                        <a href="https://drive.google.com/a/uniquindio.edu.co/folderview?id=0B6izFhsgbJgaamt0ZElXNWZFeGM&usp=sharing" target="_blank">Manuales de usuario</a>
+                    </li>
+
 
                     <li class="divider"></li>
 
@@ -167,3 +172,5 @@
         </ul>
     </div><!-- /.nav-collapse -->
 </nav>
+<img src="<?php echo IMAGE_BASE_URL?>LINEA-COLORES-UQ.png" alt="Linea colores" style="height: 5px; width: 100%; position: absolute; left: 0;">
+</div>

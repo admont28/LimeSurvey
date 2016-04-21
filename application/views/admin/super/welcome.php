@@ -27,7 +27,7 @@
     <!-- Logo & Presentation -->
     <?php if($bShowLogo):?>
         <div class="row">
-            <div class="jumbotron" id="welcome-jumbotron">
+            <div class="jumbotron" id="welcome-jumbotron" style="margin-top: 10px;">
                 <!-- ORIGINAL <img alt="logo" src="<?php echo LOGO_URL;?>" id="lime-logo"  class="profile-img-card img-responsive center-block" style="display: inline;" /> -->
                 <img alt="logo" src="<?php echo IMAGE_BASE_URL;?>GESEN-UQ.png" id="lime-logo" width="130" class="profile-img-card img-responsive center-block" style="display: inline;" />
                 <p class="hidden-xs" ><?php echo PRESENTATION; // Defined in AdminController?></p>
