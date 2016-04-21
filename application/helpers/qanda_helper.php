@@ -3890,7 +3890,14 @@ function do_array_5point($ia)
     {
         $sColumns  .= Yii::app()->getController()->renderPartial('/survey/questions/arrays/5point/columns/col', array('cellwidth'=>$cellwidth), true);
     }
-    for ($xc=1; $xc<=5; $xc++)
+    /*
+     * ----------------------------------------------------------------------------------------------
+     * MODIFICACIÓN REALIZADA POR: ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 20/04/2016
+     * Número de líneas: 1
+     * Se invierte el ciclo for, se presentaban las opciones de respuesta de menor a mayor, se invierte el ciclo para presetarlo de mayor a menos, ej: 5 - 4 - 3 - 2 - 1
+     * ----------------------------------------------------------------------------------------------
+     */
+    for ($xc=5; $xc>=1; $xc--)
     {
         $sHeaders .= Yii::app()->getController()->renderPartial('/survey/questions/arrays/5point/rows/cells/thead', array(
             'class'=>'th-1',
@@ -3940,7 +3947,14 @@ function do_array_5point($ia)
         $value = (isset($_SESSION['survey_'.Yii::app()->getConfig('surveyID')][$myfname])) ? $_SESSION['survey_'.Yii::app()->getConfig('surveyID')][$myfname] : '';
 
         // ==> tds
-        for ($i=1; $i<=5; $i++)
+        /*
+         * ----------------------------------------------------------------------------------------------
+         * MODIFICACIÓN REALIZADA POR: ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 20/04/2016
+         * Número de líneas: 1
+         * Como se invirtió la presentación de los números, quedó de mayor a menor, se debe invertir también la presentación de los valores. Para evitar que visualmente se muestre un 5 pero cuando se seleccione y se guarde la respuesta siga siendo un 1 su valor.
+         * ----------------------------------------------------------------------------------------------
+         */
+        for ($i=5; $i>=1; $i--)
         {
             $CHECKED = (isset($_SESSION['survey_'.Yii::app()->getConfig('surveyID')][$myfname]) && $_SESSION['survey_'.Yii::app()->getConfig('surveyID')][$myfname] == $i)?'CHECKED':'';
             $answer_tds .= Yii::app()->getController()->renderPartial('/survey/questions/arrays/5point/rows/cells/answer_td_input', array(
