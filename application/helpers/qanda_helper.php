@@ -3890,7 +3890,6 @@ function do_array_5point($ia)
     {
         $sColumns  .= Yii::app()->getController()->renderPartial('/survey/questions/arrays/5point/columns/col', array('cellwidth'=>$cellwidth), true);
     }
-
     for ($xc=1; $xc<=5; $xc++)
     {
         $sHeaders .= Yii::app()->getController()->renderPartial('/survey/questions/arrays/5point/rows/cells/thead', array(
