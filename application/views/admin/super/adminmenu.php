@@ -8,8 +8,8 @@
 ?>
 <div>
 <!-- admin menu bar -->
-<nav class="navbar" style="margin-bottom: -5px;">
-  <div class="navbar-header">
+<nav class="navbar" style="margin-bottom: -5px; background-color: #fff;">
+  <div class="navbar-header" style="background-color: #fff;">
       <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#small-screens-menus" style="padding-bottom: 11px;">
             <span class="sr-only">Toggle navigation</span>
             <span class="icon-bar"></span>
@@ -18,7 +18,9 @@
         </button>
 
 
-        <img alt="logo" id="" class="navbar-brand" style="height: 60px; padding: 3px 3px 6px 6px;" src="<?php echo LOGO_URL;?>">
+        <a href="http://www.uniquindio.edu.co" target="_blank">
+            <img alt="logo" id="" class="navbar-brand hidden-xs" style="height: 60px; padding: 3px 3px 6px 6px;" src="<?php echo LOGO_URL;?>">
+        </a>
         <a class="navbar-brand" href="<?php echo $this->createUrl("/admin/"); ?>" style="padding-left: 3px;">
             <?php echo $sitename; ?>
         </a>
@@ -173,6 +175,6 @@
         </ul>
     </div><!-- /.nav-collapse -->
 </nav>
-<img src="<?php echo IMAGE_BASE_URL?>LINEA-COLORES-UQ.png" alt="Linea colores" style="height: 5px; width: 100%; position: absolute; left: 0;">
+<img src="<?php echo IMAGE_BASE_URL?>LINEA-COLORES-UQ.png" alt="Linea colores institucionales" style="height: 5px; width: 100%;" class="navbar-header">
 </div>
 <br>
