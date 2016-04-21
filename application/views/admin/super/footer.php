@@ -6,8 +6,10 @@
 ?>
 
 <!-- Footer -->
-<footer class='footer'>
-	<div class="container-fluid">
+<footer class='footer' style="padding-top: 0">
+    <img src="<?php echo IMAGE_BASE_URL?>LINEA-COLORES-UQ.png" alt="Linea colores" style="height: 5px; width: 100%; position: absolute; left: 0;" >
+    </div>
+	<div class="container-fluid" style="padding-top: 1em;">
 		<div class="row">
 		    <!-- Link to manual -->
 		    <div class="col-xs-6 col-md-4 col-lg-1 ">

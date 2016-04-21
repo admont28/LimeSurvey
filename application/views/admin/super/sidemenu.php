@@ -22,7 +22,7 @@
     <div class="absolute-wrapper hidden-xs" style="z-index: 100;"> </div>
 
     <!-- sideMenu -->
-    <div class="side-menu  hidden-xs" id="sideMenu" style="z-index: 101;">
+    <div class="side-menu  hidden-xs" id="sideMenu" style="z-index: 101; min-height: auto;">
 
         <nav class="navbar navbar-default  hidden-xs">
 
