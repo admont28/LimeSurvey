@@ -18,7 +18,8 @@
         </button>
 
 
-        <a class="navbar-brand" href="<?php echo $this->createUrl("/admin/"); ?>">
+        <img alt="logo" id="" class="navbar-brand" style="height: 60px; padding: 3px 3px 6px 6px;" src="<?php echo LOGO_URL;?>">
+        <a class="navbar-brand" href="<?php echo $this->createUrl("/admin/"); ?>" style="padding-left: 3px;">
             <?php echo $sitename; ?>
         </a>
     </div>
@@ -174,3 +175,4 @@
 </nav>
 <img src="<?php echo IMAGE_BASE_URL?>LINEA-COLORES-UQ.png" alt="Linea colores" style="height: 5px; width: 100%; position: absolute; left: 0;">
 </div>
+<br>
