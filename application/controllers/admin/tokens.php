@@ -721,7 +721,24 @@ class tokens extends Survey_Common_Action
             }
 
             $sanitizedtoken = sanitize_token(Yii::app()->request->getPost('token'));
+            /*
+             * -------------------------------------------------------------------------------------
+             * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 22/04/2016
+             * Número de lineas: 11
+             * No se permite adicionar un encuestado si no posee el nombre, el apellido y el correo electrónico, es redireccionado a una pantalla donde se muestra el error y finaliza el script.
+             * -------------------------------------------------------------------------------------
+             */
+            if (trim(Yii::app()->request->getPost('firstname')) == "" || trim(Yii::app()->request->getPost('lastname')) == "" || trim(Yii::app()->request->getPost('email')) == "") {
+                $aData['success'] = false;
+                $aData['message'] = "El encuestado debe tener un nombre, apellido y correo electrónico. Por favor corrija estos campos e intentelo de nuevo.";
+                $aData['thissurvey'] = getSurveyInfo($iSurveyId);
+                $aData['surveyid'] = $iSurveyId;
 
+                $aData['sidemenu']['state'] = false;
+
+                $this->_renderWrappedTemplate('token', array( 'addtokenpost'), $aData);
+                die();
+            }
             $aData = array(
             'firstname' => Yii::app()->request->getPost('firstname'),
             'lastname' => Yii::app()->request->getPost('lastname'),
@@ -762,6 +779,7 @@ class tokens extends Survey_Common_Action
             else
             {
                 $aData['success'] = false;
+                $aData['message'] = eT("There is already an entry with that exact token in the table. The same token cannot be used in multiple entries.");
             }
 
             $aData['thissurvey'] = getSurveyInfo($iSurveyId);
