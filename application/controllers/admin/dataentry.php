@@ -478,6 +478,20 @@ class dataentry extends Survey_Common_Action
     */
     public function editdata($subaction, $id, $surveyid, $language='')
     {
+        /*
+         * -------------------------------------------------------------------------------------
+         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
+         * Número de lineas: 7
+         * No se permite editar las respuestas si no es super administrador, así que se redirecciona inmediatamente.
+         * -------------------------------------------------------------------------------------
+         */
+        $loginID = Yii::app()->session['loginID'];
+        $issuperadmin = (Permission::model()->hasGlobalPermission('superadmin', 'read', $loginID));
+        if(!$issuperadmin){
+            Yii::app()->setFlashMessage("Error - No se puede editar las respuestas de los encuestados.","error");
+            $this->getController()->redirect($this->getController()->createUrl("admin/responses/sa/browse/surveyid/{$surveyid}"));
+            die();
+        }
         if ($language == '') {
             $language = Survey::model()->findByPk($surveyid)->language;
         }
