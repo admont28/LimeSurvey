@@ -2015,6 +2015,14 @@ class SurveyAdmin extends Survey_Common_Action
                 redirect($this->getController()->createUrl('admin'));
                 return;
             }
+            /*
+             * -------------------------------------------------------------------------------------
+             * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 25/04/2016
+             * Número de lineas: 6
+             * Se verifica que el título de la encuesta no esté vacío, si es así,
+             * se redirecciona, se muestra un mensaje y se finaliza el script.
+             * -------------------------------------------------------------------------------------
+             */
             $sTitle = $_POST['surveyls_title'];
             if(trim($sTitle) == ""){
                 Yii::app()->setflashmessage("El título no puede quedar vacío, por favor inténtelo de nuevo.", "error");
@@ -2457,7 +2465,7 @@ class SurveyAdmin extends Survey_Common_Action
 
     /**
      * Función que permite listar las encuestas propias del usuario logueado.
-     * @author @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 25/04/2016
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 25/04/2016
      * @return sin retorno No retorna nada, solo redirecciona a una vista listMySurveys_view
      */
     public function listmysurveys(){
