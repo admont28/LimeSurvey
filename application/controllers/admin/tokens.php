@@ -907,7 +907,7 @@ class tokens extends Survey_Common_Action
     {
         /*
          * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
+         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 22/04/2016
          * Número de lineas: 31
          * No se permite eliminar los encuestados si no es super administrador, si es super admin no puede borrar un encuestado si tiene una respuesta asociada.
          * -------------------------------------------------------------------------------------
