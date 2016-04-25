@@ -109,6 +109,11 @@
                                  <?php eT("List surveys");?>
                              </a>
                          </li>
+                         <li>
+                             <a href="<?php echo $this->createUrl("admin/survey/sa/listmysurveys"); ?>">
+                                 Listar mis encuestas
+                             </a>
+                         </li>
 
                        </ul>
                      </li>

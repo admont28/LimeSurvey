@@ -2015,6 +2015,12 @@ class SurveyAdmin extends Survey_Common_Action
                 redirect($this->getController()->createUrl('admin'));
                 return;
             }
+            $sTitle = $_POST['surveyls_title'];
+            if(trim($sTitle) == ""){
+                Yii::app()->setflashmessage("El título no puede quedar vacío, por favor inténtelo de nuevo.", "error");
+                $this->getController()->redirect(array('admin/survey/sa/newsurvey'));
+                die();
+            }
 
             Yii::app()->loadHelper("surveytranslator");
             // If start date supplied convert it to the right format
@@ -2447,6 +2453,45 @@ class SurveyAdmin extends Survey_Common_Action
      */
     public function politices(){
         $this->_renderWrappedTemplate('super','politices_view');
+    }
+
+    /**
+     * Función que permite listar las encuestas propias del usuario logueado.
+     * @author @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 25/04/2016
+     * @return sin retorno No retorna nada, solo redirecciona a una vista listMySurveys_view
+     */
+    public function listmysurveys(){
+        Yii::app()->loadHelper('surveytranslator');
+
+        $aData['issuperadmin'] = false;
+        if (Permission::model()->hasGlobalPermission('superadmin','read'))
+        {
+            $aData['issuperadmin'] = true;
+        }
+
+        $aData['model'] = $model =  new Survey('search');
+        // Search
+        if (isset($_GET['Survey']['searched_value']))
+        {
+            $model->searched_value = $_GET['Survey']['searched_value'];
+        }
+
+        $model->active = null;
+
+        // Filter state
+        if (isset($_GET['active']) && !empty($_GET['active']))
+        {
+            $model->active = $_GET['active'];
+        }
+
+        // Set number of page
+        if (isset($_GET['pageSize']))
+        {
+            Yii::app()->user->setState('pageSize',(int)$_GET['pageSize']);
+        }
+
+        $aData['fullpagebar']['button']['newsurvey'] = true;
+        $this->_renderWrappedTemplate('survey', 'listMySurveys_view', $aData);
     }
 
 } // Close surveyadmin class

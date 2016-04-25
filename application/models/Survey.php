@@ -1029,5 +1029,107 @@ class Survey extends LSActiveRecord
 
         return 'N';
     }
+    /**
+     * Función que permite realizar busquedas de las encuestas del usuario logueado, se crea esta función aparte para no tocar la función search() original.
+     * @author @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 25/04/2016
+     * @return CActiveDataProvider  Retorna un objeto CActiveDataProvider con los datos devueltos de la búsqueda-
+     */
+    public function mysearch()
+    {
+        $pageSize=Yii::app()->user->getState('pageSize',Yii::app()->params['defaultPageSize']);
+        $sort = new CSort();
+        $sort->attributes = array(
+          'survey_id'=>array(
+            'asc'=>'sid',
+            'desc'=>'sid desc',
+          ),
+          'title'=>array(
+            'asc'=>'surveys_languagesettings.surveyls_title',
+            'desc'=>'surveys_languagesettings.surveyls_title desc',
+          ),
+
+          'creation_date'=>array(
+            'asc'=>'datecreated',
+            'desc'=>'datecreated desc',
+          ),
+
+          'owner'=>array(
+            'asc'=>'users.users_name',
+            'desc'=>'users.users_name desc',
+          ),
+
+          'anonymized_responses'=>array(
+            'asc'=>'anonymized',
+            'desc'=>'anonymized desc',
+          ),
+
+          'running'=>array(
+            'asc'=>'active asc, expires asc',
+            'desc'=>'active desc, expires desc',
+          ),
+
+        );
+
+        $criteria = new CDbCriteria;
+        $criteria->join  = 'LEFT JOIN {{surveys_languagesettings}} AS surveys_languagesettings ON ( surveys_languagesettings.surveyls_language = t.language AND t.sid = surveys_languagesettings.surveyls_survey_id )';
+        $criteria->join .= 'LEFT JOIN {{users}} AS users ON ( users.uid = t.owner_id )';
+
+        
+        $criteria->join .= "LEFT JOIN {{permissions}} AS permissions ON ( permissions.entity_id=t.sid AND permissions.entity='survey' AND permissions.permission='surveycontent' AND permissions.uid=:userid  ) ";
+        $criteria->condition = 'permissions.read_p=1';
+        $criteria->params=(array(':userid'=>Yii::app()->user->id ));
+        
+
+        // Search filter
+        $criteria2 = new CDbCriteria;
+        $sid_reference = (Yii::app()->db->getDriverName() == 'pgsql' ?' t.sid::varchar' : 't.sid');
+        $criteria2->compare($sid_reference, $this->searched_value, true, 'OR');
+        $criteria2->compare('surveys_languagesettings.surveyls_title', $this->searched_value, true, 'OR');
+        $criteria2->compare('t.admin', $this->searched_value, true, 'OR');
+        /*
+         * -------------------------------------------------------------------------------------
+         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 04/04/2016
+         * Número de lineas: 2 
+         * Se adiciona un nuevo campo para la búsqueda, ahora se puede buscar por fecha de creación
+         * -------------------------------------------------------------------------------------
+         */
+        $datecreated_reference = (Yii::app()->db->getDriverName() == 'pgsql' ?' t.datecreated::varchar' : 't.datecreated');
+        $criteria2->compare($datecreated_reference, $this->searched_value, true, 'OR');
+
+        // Active filter
+        if(isset($this->active))
+        {
+            if($this->active == 'N' || $this->active == "Y")
+            {
+                $criteria->addCondition("t.active='$this->active'");
+            }
+            else
+            {
+                // Time adjust
+                $sNow = date("Y-m-d H:i:s", strtotime(Yii::app()->getConfig('timeadjust'), strtotime(date("Y-m-d H:i:s"))) );
+
+                if($this->active == "E")
+                {
+                    $criteria->addCondition("t.expires <'$sNow'");
+                }
+                if($this->active == "S")
+                {
+                    $criteria->addCondition("t.startdate >'$sNow'");
+                }
+            }
+        }
+
+        $criteria->mergeWith($criteria2, 'AND');
+
+        $dataProvider=new CActiveDataProvider('Survey', array(
+            'sort'=>$sort,
+            'criteria'=>$criteria,
+            'pagination'=>array(
+                'pageSize'=>$pageSize,
+            ),
+        ));
+
+        return $dataProvider;
+    }
 
 }
