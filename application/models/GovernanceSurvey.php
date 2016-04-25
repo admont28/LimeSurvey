@@ -5,6 +5,7 @@ if (!defined('BASEPATH'))
 /**
  * Modelo Governance encargado de manejar la tabla governancesurvey en la base de datos,
  * En ella se almacenarán las solicitudes de activación de encuestas.
+ * @author @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 19/04/2016
  */
 class GovernanceSurvey extends LSActiveRecord{
 
@@ -17,6 +18,7 @@ class GovernanceSurvey extends LSActiveRecord{
     /**
     * Retorna el modelo estático de la tabla Governance
     *
+    * @author @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 19/04/2016
     * @static
     * @access public
     * @param string $class
@@ -30,6 +32,7 @@ class GovernanceSurvey extends LSActiveRecord{
 	/**
     * Returna el nombre de la tabla
     *
+    * @author @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 19/04/2016
     * @access public
     * @return string
     */
@@ -40,7 +43,8 @@ class GovernanceSurvey extends LSActiveRecord{
 
 	/**
     * Retorna la llave primaria de la tabla
-    *
+    * 
+    * @author @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 19/04/2016
     * @access public
     * @return string
     */
@@ -51,6 +55,7 @@ class GovernanceSurvey extends LSActiveRecord{
 
 	/**
     * Returna las reglas de validación de este modelo
+    * @author @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 19/04/2016
     * @access public
     */
     public function rules()
@@ -67,7 +72,7 @@ class GovernanceSurvey extends LSActiveRecord{
 
     /**
     * Retorna las relaciones de este modelo
-    *
+    * @author @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 19/04/2016
     * @access public
     * @return array
     */
@@ -87,6 +92,7 @@ class GovernanceSurvey extends LSActiveRecord{
      * gosu_Requestdate
      * gosu_Modificationdate
      * gosu_Requeststate
+     * @author @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 19/04/2016
      * @return CActiveDataProvider Retorna un CActiveDataProvider con el resultado de la búsqueda
      */
     public function search(){
