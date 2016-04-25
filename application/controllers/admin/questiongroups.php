@@ -201,9 +201,23 @@ class questiongroups extends Survey_Common_Action
 
             $grplangs[] = $baselang;
             $errorstring = '';
-            foreach ($grplangs as $grouplang)
+            foreach ($grplangs as $grouplang){
                 if (empty($_POST['group_name_' . $grouplang]))
                     $errorstring.= getLanguageNameFromCode($grouplang, false) . "\\n";
+                /*
+                 * -------------------------------------------------------------------------------------
+                 * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 25/04/2016
+                 * Número de lineas: 6
+                 * Se verifica que el título del grupo de preguntas no esté vacío, si es así,
+                 * se redirecciona, se muestra un mensaje y se finaliza el script.
+                 * -------------------------------------------------------------------------------------
+                 */
+                if(trim($_POST['group_name_' . $grouplang]) == ""){
+                    Yii::app()->setflashmessage("El título no puede quedar vacío, por favor inténtelo de nuevo.", "error");
+                    $this->getController()->redirect(array('admin/questiongroups/sa/add/surveyid/'.$surveyid));
+                    die();
+                }
+            }
 
             if ($errorstring != '')
                 $this->getController()->redirect(array('admin/survey/sa/view/surveyid/' . $surveyid));
