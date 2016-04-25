@@ -85,7 +85,14 @@
 
             $aRules= array(
                         array('title','required','on' => 'update, insert','message'=>gT('Question code may not be empty.','unescaped')),
-                        array('title','length', 'min' => 1, 'max'=>20,'on' => 'update, insert'),
+                        /*
+                         * ----------------------------------------------------------------------------------------------
+                         * MODIFICACIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 25/04/2016
+                         * Número de líneas: 1
+                         * Se modifica el tamaño máximo del titulo (código) de la pregunta, para que soporte 50 caracteres, por defecto venía en 20.
+                         * ----------------------------------------------------------------------------------------------
+                         */
+                        array('title','length', 'min' => 1, 'max'=>50,'on' => 'update, insert'),
                         array('qid', 'numerical','integerOnly'=>true),
                         array('qid', 'unique', 'criteria'=>array(
                                         'condition'=>'language=:language',
