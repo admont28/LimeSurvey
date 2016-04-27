@@ -134,7 +134,7 @@
                     </li>
                     <!-- Manuales de usuario -->
                     <li>
-                        <a href="https://drive.google.com/a/uniquindio.edu.co/folderview?id=0B6izFhsgbJgaamt0ZElXNWZFeGM&usp=sharing" target="_blank">Manuales de usuario</a>
+                        <a href="http://web2.uniquindio.edu.co/tutoriales-encuestas/" target="_blank">Manuales de usuario</a>
                     </li>
 
 
