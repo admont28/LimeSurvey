@@ -25,3 +25,4 @@
 /application/config/config.php
 application/config/_config.php
 *.un~
+/sftp-config.json
