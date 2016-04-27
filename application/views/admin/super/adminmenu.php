@@ -6,11 +6,11 @@
  * @var $dataForConfigMenu
  */
 ?>
-
+<div>
 <!-- admin menu bar -->
-<nav class="navbar">
-  <div class="navbar-header">
-      <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#small-screens-menus">
+<nav class="navbar" style="margin-bottom: -5px; background-color: #fff;">
+  <div class="navbar-header" style="background-color: #fff;">
+      <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#small-screens-menus" style="padding-bottom: 11px;">
             <span class="sr-only">Toggle navigation</span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
@@ -18,7 +18,10 @@
         </button>
 
 
-        <a class="navbar-brand" href="<?php echo $this->createUrl("/admin/"); ?>">
+        <a href="http://www.uniquindio.edu.co" target="_blank">
+            <img alt="logo" id="" class="navbar-brand hidden-xs" style="height: 60px; padding: 3px 3px 6px 6px;" src="<?php echo LOGO_URL;?>">
+        </a>
+        <a class="navbar-brand" href="<?php echo $this->createUrl("/admin/"); ?>" style="padding-left: 3px;">
             <?php echo $sitename; ?>
         </a>
     </div>
@@ -59,6 +62,11 @@
 
             <!-- Configuration menu -->
             <?php $this->renderPartial( "/admin/super/_configuration_menu", $dataForConfigMenu ); ?>
+            <li class="dropdown-split-left">
+                <a style="" href="<?php echo $this->createUrl("admin/survey/sa/listrequests"); ?>">
+                    <?php eT("Listar solicitudes");?>
+                </a>
+            </li>
 
             <!-- Surveys menus -->
             <li class="dropdown-split-left">
@@ -101,6 +109,11 @@
                                  <?php eT("List surveys");?>
                              </a>
                          </li>
+                         <li>
+                             <a href="<?php echo $this->createUrl("admin/survey/sa/listmysurveys"); ?>">
+                                 Listar mis encuestas
+                             </a>
+                         </li>
 
                        </ul>
                      </li>
@@ -119,6 +132,11 @@
                     <li>
                         <a href="<?php echo $this->createUrl("/admin/user/sa/personalsettings"); ?>"><?php eT("Edit your personal preferences");?></a>
                     </li>
+                    <!-- Manuales de usuario -->
+                    <li>
+                        <a href="https://drive.google.com/a/uniquindio.edu.co/folderview?id=0B6izFhsgbJgaamt0ZElXNWZFeGM&usp=sharing" target="_blank">Manuales de usuario</a>
+                    </li>
+
 
                     <li class="divider"></li>
 
@@ -162,3 +180,6 @@
         </ul>
     </div><!-- /.nav-collapse -->
 </nav>
+<img src="<?php echo IMAGE_BASE_URL?>LINEA-COLORES-UQ.png" alt="Linea colores institucionales" style="height: 5px; width: 100%;" class="navbar-header">
+</div>
+<br>

@@ -2388,7 +2388,7 @@ class statistics_helper {
     */
     protected function displayResults($outputs, $results, $rt, $outputType, $surveyid, $sql, $usegraph, $browse, $sLanguage)
     {
-
+        $headPDF = array();
         /* Set up required variables */
         $TotalCompleted = 0; //Count of actually completed answers
         $statisticsoutput="";
@@ -4563,6 +4563,148 @@ class statistics_helper {
             $reshtml= "<span style='cursor: pointer' title='".$htmlhinttext."'> \"$htmlhinttext\"</span>";
         }
         return $reshtml;
+    }
+
+    /**
+     * Función que permite generar las estadísticas para las evaluaciones de docente.
+     * Dado por el acuerdo 109 del 24 de Octubre de 1996 Armenia.
+     * @param  ind $surveyid Identificador único de la encuesta
+     * @param  string $language Lenguaje de la encuesta, por defecto: es (español)
+     * @return PDF           Retorna el pdf con las estadísticas de la evaluación docente.
+     */
+    public function generate_statistics_teacher_evaluation($surveyid, $language = "es"){
+        /*
+         * ------------------------------------------------------------------------------------
+         * CONSTRUCCIÓN DEL DOCUMENTO PDF, CABECERAS Y CONFIGURACIONES ADICIONALES
+         * ------------------------------------------------------------------------------------
+         */
+        /*
+         * Se importan las librerías y los helpers para crear pdf
+         */
+        Yii::import('application.libraries.admin.pdf', true);
+        Yii::import('application.helpers.pdfHelper');
+        $aPdfLanguageSettings = pdfHelper::getPdfLanguageSettings($language);
+        // Se crea un nuevo documento pdf
+        $this->pdf = new pdf();
+
+        $surveyInfo = getSurveyInfo($surveyid,$language);
+
+        // set document information
+        $this->pdf->SetCreator(PDF_CREATOR);
+        $this->pdf->SetAuthor('GESENUQ');
+        $this->pdf->SetTitle(sprintf("Evaluación docente %s",$surveyid));
+        $this->pdf->SetSubject($surveyInfo['surveyls_title']);
+        $this->pdf->SetKeywords('GESEN-UQ, LimeSurvey,'.gT("Statistics").', '.sprintf(gT("Survey %s"),$surveyid));
+        $this->pdf->SetDisplayMode('fullpage', 'one');
+        $this->pdf->setLanguageArray($aPdfLanguageSettings['lg']);
+
+        // set header and footer fonts
+        $this->pdf->setHeaderFont(Array($aPdfLanguageSettings['pdffont'], '', PDF_FONT_SIZE_MAIN));
+        $this->pdf->setFooterFont(Array($aPdfLanguageSettings['pdffont'], '', PDF_FONT_SIZE_DATA));
+
+        // set default header data
+        // Since png crashes some servers (and we can not try/catch that) we use .gif (or .jpg) instead
+        //$headerlogo = '$this->pdf';
+        //$headerlogo = 'LOGO-UQ.png';
+        $headerlogo = "";
+        $this->pdf->SetHeaderData("LOGO-UQ-HEADER.png", 15, "Resultados evaluación docente" , "Evaluación docente (ID:".$surveyid.") '".flattenText($surveyInfo['surveyls_title'],false,true,'UTF-8')."'");
+        $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], '', $aPdfLanguageSettings['pdffontsize']);
+        // set default monospaced font
+        $this->pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+
+        /*
+         * ----------------------------------------------------------------------------------------
+         * GENERADOR DE RESULTADOS
+         * ----------------------------------------------------------------------------------------
+         */
+        // Se cuenta el numero total de respuestas.
+        $query_total_answers = "SELECT count(*) FROM {{survey_$surveyid}}";
+        $total_answers = Yii::app()->db->createCommand($query_total_answers)->queryScalar();
+        if(isset($total_answers) && $total_answers) 
+        {
+            $array = array(
+                    array("Número total de respuestas de esta evaluación", $total_answers),
+                );
+        }
+        $fecha_actual = date("Y-m-d");
+        $this->pdf->AddPage('P', ' A4');
+        $this->pdf->Bookmark("Evaluación Docente", 0, 0);
+        $this->pdf->titleintopdf("Resultados evaluación docente (ID: ".$surveyid." ) - fecha de reporte: ".$fecha_actual);
+        $this->pdf->tableintopdf($array);
+
+        /*
+         * Respuestas
+         */
+        // Cabecera de la tabla
+        $headPDF[] = array("#","Pregunta", "Promedio");
+        // Contenido de la tabla
+        $tablePDF = array();
+
+        /*
+         * Obtengo todos los qid de la encuesta.
+         */
+        $query_qids_survey = "SELECT qid,gid,question FROM QUESTIONS WHERE sid =".$surveyid." AND type = 'L' ORDER BY question_order ASC";
+        $result_query_qids_survey = Yii::app()->db->createCommand($query_qids_survey)->query();
+        $query_survey_answers = "SELECT * FROM {{survey_$surveyid}}";
+        $result_query_survey_answers = Yii::app()->db->createCommand($query_survey_answers)->queryAll();
+        //Yii::trace(CVarDumper::dumpAsString($result_query_survey_answers), 'vardump');
+        $answers = array();
+        $sum_total = 0;
+        $j = 1;
+        foreach ($result_query_qids_survey as $q => $valueq) {
+                // $valueq['qid'] obtengo el qid
+                // $valueq['gid'] obtengo el id del grupo
+                $gid = $valueq['gid'];
+                $qid = $valueq['qid'];
+                // Obtengo el nombre de la columna que contiene las respuestas a cada una de las preguntas
+                $column = $surveyid."X".$gid."X".$qid;
+                $query_code_answ = "SELECT code FROM ANSWERS WHERE qid=".$qid;
+                $result_query_code_answ = Yii::app()->db->createCommand($query_code_answ)->queryAll();
+                $answer_question = array();
+                $sum = 0;
+                for ($i=0; $i < sizeof($result_query_code_answ); $i++) { 
+                
+                    // Obtengo el codigo de la pregunta
+                    $code_answ = $result_query_code_answ[$i]['code'];
+                    // Creo la consulta para contar la cantidad de veces que se selecciona una respuesta.
+                    $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE \"$column\" = '$code_answ' ";
+                    // Obtengo el número de la consulta anterior
+                    $result = Yii::app()->db->createCommand($query)->queryScalar();
+                    $answer['code'] = $code_answ;
+                    $answer['count'] = $result;
+                    // Calculo el valor final dado los pesos de las respuestas.
+                    if($i == 0){
+                        $answer['final_value'] = $answer['count'] * 5;
+                    }else if($i == 1){
+                        $answer['final_value'] = $answer['count'] * 3;
+                    }else if($i == 2){
+                        $answer['final_value'] = $answer['count'];
+                    }
+                    // Realizo la suma de los valores finales para luego hacer el promedio.
+                    $sum = $sum + $answer['final_value'];
+                    $answer_question[] = $answer;
+                } // Close for
+                $answer_question['average'] = sprintf("%01.2f", $sum / $total_answers);
+                $sum_total = $sum_total + $answer_question['average'];
+                $tablePDF[] = array($j,$valueq['question'], $answer_question['average']);
+                $answers[] = $answer_question;
+                $j++;
+            //Yii::trace(CVarDumper::dumpAsString($value), 'vardump');
+        } // Close foreach
+        //$oldStyle = $this->pdf->FontStyle;
+        
+        $tablePDF[] = array("--","PROMEDIO TOTAL", sprintf("%01.2f", $sum_total/sizeof($result_query_qids_survey)));
+       
+       
+
+        // Incrusto la tabla con los valores obtenidos.
+        $this->pdf->headTable($headPDF,$tablePDF);
+        $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], 'B', $aPdfLanguageSettings['pdffontsize']);
+        $this->pdf->tableintopdf( array(array("","PROMEDIO TOTAL", sprintf("%01.2f", $sum_total/sizeof($result_query_qids_survey)))));
+        $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], '', $aPdfLanguageSettings['pdffontsize']);
+        // Se finaliza el pdf y se le asigna el nombre para que lo puedan guardar
+        $this->pdf->lastPage();
+        return $this->pdf->Output('EvaluacionDocente_'.$surveyid."_".$surveyInfo['surveyls_title'].'.pdf');
     }
 
 }

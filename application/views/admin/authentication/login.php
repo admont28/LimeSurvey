@@ -6,15 +6,21 @@
 <noscript>If you see this you have probably JavaScript deactivated. LimeSurvey does not work without Javascript being activated in the browser!</noscript>
 <div class="container-fluid welcome">
     <div class="row text-center">
-        <div class="col-lg-3 col-lg-offset-4 col-sm-6 col-sm-offset-3">
+        <!-- CSNT 08/04/2016-->
+        <div class="col-lg-4 col-lg-offset-4 col-sm-6 col-sm-offset-3">
             <div class="panel panel-primary login-pannel" id="pannel-1">
 
                 <!-- Header -->
                 <div class="panel-body">
                     <div class="row">
                         <div class="col-lg-12">
-                          <img alt="logo" id="profile-img" class="profile-img-card img-responsive center-block" src="<?php echo LOGO_URL;?>" />
-                             <p><?php eT("Administration");?></p>
+                            <!-- ORIGINAL<img alt="logo" id="profile-img" class="profile-img-card img-responsive center-block" src="<?php echo LOGO_URL;?>" />
+                            <p><?php eT("Administration");?></p> -->
+                            <!-- CSNT 08/04/2016-->
+                            <img alt="logo" id="profile-img" class="profile-img-card img-responsive center-block" style="height: 130px" src="<?php echo LOGO_URL;?>" />
+                            <!-- CSNT 08/04/2016-->
+                            <h3 style="margin-top: 15px"><?php //eT("Administration");
+                                eT("Gestión de Encuestas GESEN-UQ");?></h3>
                         </div>
                     </div>
                 </div>
@@ -22,7 +28,9 @@
                 <!-- Action Name -->
                 <div class="row login-title login-content">
                       <div class="col-lg-12">
-                       <h3><?php eT("Log in");?></h3>
+                       <!-- ORIGINAL <h3><?php eT("Log in");?></h3> -->
+                       <!-- CSNT 08/04/2016-->
+                       <h3><?php eT("Inicio de sesión");?></h3>
                     </div>
                 </div>
 

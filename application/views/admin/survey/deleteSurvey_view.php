@@ -20,10 +20,26 @@
                     <?php if (tableExists("{{tokens_{$surveyid}}}")): ?>
                         <span class="text-warning"><?php eT("This survey has an associated tokens table. If you delete this survey this tokens table will be deleted. We recommend that you export or backup these tokens before deleting this survey."); ?><br /><br />
                     <?php endif; ?>
-
+                    <br /><br />
+                    <span class="text-warning">
+                        Deberá proporcionar una justificación detallada de por qué eliminará la encuesta.
+                    </span>
                 </p>
                 <p>
                     <?php echo CHtml::beginForm($this->createUrl("admin/survey/sa/delete/surveyid/{$surveyid}"), 'post');?>
+                        <div class="row">
+                            <div class="col-sm-3 col-sm-offset-3">
+                                <div class="row">
+                                    <div class='form-group'>
+                                        <label class='control-label col-sm-6' for='justification'>Justificación:</label>
+                                        <div class='col-sm-6'>
+                                            <textarea rows="4" cols="50" name="justification" placeholder="Justifica la eliminación de esta encuesta." required="required"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <br />
                         <input type='hidden' name='delete' value='yes'>
                         <input type='submit'  class="btn btn-lg btn-warning" value='<?php eT("Delete survey"); ?>'>
                         <input type='button'  class="btn btn-lg btn-default" value='<?php eT("Cancel"); ?>' onclick="window.open('<?php echo Yii::app()->request->getUrlReferrer( Yii::app()->createUrl("admin/survey/sa/view/surveyid/$surveyid") , array() ); ?>', '_top')" />

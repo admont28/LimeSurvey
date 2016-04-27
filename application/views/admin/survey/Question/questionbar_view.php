@@ -72,10 +72,19 @@ $aReplacementData=array();
 
             <!-- Edit button -->
             <?php if(Permission::model()->hasSurveyPermission($surveyid,'surveycontent','update')): ?>
-                <a class="btn btn-default" href='<?php echo $this->createUrl("admin/questions/sa/editquestion/surveyid/".$surveyid."/gid/".$gid."/qid/".$qid); ?>' role="button">
-                    <span class="icon-edit"></span>
-                    <?php eT("Edit");?>
-                </a>
+                <?php if(isset($canmodify,$issuperadmin) && !$canmodify && !$issuperadmin ):?>
+                    <span class="btntooltip" data-toggle="tooltip" data-placement="bottom" title="No tienes permiso para hacer esto" >
+                        <a class="btn btn-default disabled" href='#' role="button">
+                            <span class="icon-edit"></span>
+                            <?php eT("Edit");?>
+                        </a>
+                    </span>
+                <?php else: ?>
+                    <a class="btn btn-default" href='<?php echo $this->createUrl("admin/questions/sa/editquestion/surveyid/".$surveyid."/gid/".$gid."/qid/".$qid); ?>' role="button">
+                        <span class="icon-edit"></span>
+                        <?php eT("Edit");?>
+                    </a>
+                <?php endif;?>
             <?php endif; ?>
 
 
@@ -89,21 +98,29 @@ $aReplacementData=array();
 
 
             <!-- Delete -->
-            <?php if( $activated != "Y" && Permission::model()->hasSurveyPermission($surveyid,'surveycontent','delete' )):?>
-                <a class="btn btn-default"
-                onclick="if (confirm('<?php eT("Deleting this question will also delete any answer options and subquestions it includes. Are you sure you want to continue?","js"); ?>')) { <?php echo convertGETtoPOST($this->createUrl("admin/questions/sa/delete/surveyid/$surveyid/gid/$gid/qid/$qid")); ?>}">
+            <?php if(isset($canmodify,$issuperadmin) && !$canmodify && !$issuperadmin ):?>
+                <span class="btntooltip" data-toggle="tooltip" data-placement="bottom" title="No tienes permiso para hacer esto" >
+                    <a class="btn btn-default disabled" role="button">
                     <span class="glyphicon glyphicon-trash text-danger"></span>
-                    <?php eT("Delete"); ?>
-                </a>
-            <?php else:?>
-                <a href='<?php echo $this->createUrl('admin/survey/sa/view/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid); ?>'
-                    class="btn btn-default"
-                    onclick="alert('<?php eT("You can't delete this question group because the survey is currently active.","js"); ?>')">
-                    <span class="glyphicon glyphicon-trash"></span>
-                    <?php eT("Delete current question group"); ?>
-                </a>
+                        <?php eT("Delete"); ?>
+                    </a>
+                </span>
+            <?php else: ?>
+                <?php if( $activated != "Y" && Permission::model()->hasSurveyPermission($surveyid,'surveycontent','delete' )):?>
+                    <a class="btn btn-default"
+                    onclick="if (confirm('<?php eT("Deleting this question will also delete any answer options and subquestions it includes. Are you sure you want to continue?","js"); ?>')) { <?php echo convertGETtoPOST($this->createUrl("admin/questions/sa/delete/surveyid/$surveyid/gid/$gid/qid/$qid")); ?>}">
+                        <span class="glyphicon glyphicon-trash text-danger"></span>
+                        <?php eT("Delete"); ?>
+                    </a>
+                <?php else:?>
+                    <a href='<?php echo $this->createUrl('admin/survey/sa/view/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid); ?>'
+                        class="btn btn-default"
+                        onclick="alert('<?php eT("You can't delete this question group because the survey is currently active.","js"); ?>')">
+                        <span class="glyphicon glyphicon-trash"></span>
+                        <?php eT("Delete current question group"); ?>
+                    </a>
+                <?php endif; ?>
             <?php endif; ?>
-
 
             <!-- export -->
             <?php if(Permission::model()->hasSurveyPermission($surveyid,'surveycontent','export')):?>
@@ -114,66 +131,106 @@ $aReplacementData=array();
             <?php endif; ?>
 
             <!-- copy -->
-            <?php if(Permission::model()->hasSurveyPermission($surveyid,'surveycontent','create')):?>
-                <?php if(($activated != "Y")):?>
-                    <a class="btn btn-default" href="<?php echo $this->createUrl("admin/questions/sa/copyquestion/surveyid/$surveyid/gid/$gid/qid/$qid");?>" role="button">
+            <?php if(isset($canmodify,$issuperadmin) && !$canmodify && !$issuperadmin ):?>
+                <span class="btntooltip" data-toggle="tooltip" data-placement="bottom" title="No tienes permiso para hacer esto" >
+                    <a class="btn btn-default disabled" href="#" role="button">
                         <span class="icon-copy"></span>
                         <?php eT("Copy"); ?>
                     </a>
+                </span>
+            <?php else: ?>
+                <?php if(Permission::model()->hasSurveyPermission($surveyid,'surveycontent','create')):?>
+                    <?php if(($activated != "Y")):?>
+                        <a class="btn btn-default" href="<?php echo $this->createUrl("admin/questions/sa/copyquestion/surveyid/$surveyid/gid/$gid/qid/$qid");?>" role="button">
+                            <span class="icon-copy"></span>
+                            <?php eT("Copy"); ?>
+                        </a>
+                    <?php else:?>
+                        <a class="btn disabled" href="#" role="button" onclick="alert('<?php eT("You can't copy a question if the survey is active.","js"); ?>');">
+                            <span class="icon-copy"></span>
+                            <?php eT("Copy"); ?>
+                        </a>
+                    <?php endif;?>
                 <?php else:?>
-                    <a class="btn disabled" href="#" role="button" onclick="alert('<?php eT("You can't copy a question if the survey is active.","js"); ?>');">
-                        <span class="icon-copy"></span>
-                        <?php eT("Copy"); ?>
-                    </a>
+                        <a class="btn disabled" href="#" role="button" onclick="alert('<?php eT("You don't have the necessary permission.","js"); ?>');">
+                            <span class="icon-copy"></span>
+                            <?php eT("Copy"); ?>
+                        </a>
                 <?php endif;?>
-            <?php else:?>
-                    <a class="btn disabled" href="#" role="button" onclick="alert('<?php eT("You don't have the necessary permission.","js"); ?>');">
-                        <span class="icon-copy"></span>
-                        <?php eT("Copy"); ?>
-                    </a>
-            <?php endif;?>
-
+            <?php endif; ?>
             <!-- conditions -->
-            <?php if(Permission::model()->hasSurveyPermission($surveyid,'surveycontent','update')):?>
-                    <a class="btn btn-default" href="<?php echo $this->createUrl("admin/conditions/sa/index/subaction/editconditionsform/surveyid/$surveyid/gid/$gid/qid/$qid"); ?>" role="button">
+            <?php if(isset($canmodify,$issuperadmin) && !$canmodify && !$issuperadmin ):?>
+                <span class="btntooltip" data-toggle="tooltip" data-placement="bottom" title="No tienes permiso para hacer esto" >
+                    <a class="btn btn-default disabled" href="#" role="button">
                         <span class="icon-conditions"></span>
                         <?php eT("Set conditions "); ?>
                     </a>
-            <?php else:?>
-                    <a class="btn disabled" href="#" role="button" onclick="alert('<?php eT("You don't have the necessary permission.","js"); ?>')">
-                        <span class="icon-conditions"></span>
-                        <?php eT("Set conditions "); ?>
-                    </a>
-            <?php endif;?>
-
+                </span>
+            <?php else: ?>
+                <?php if(Permission::model()->hasSurveyPermission($surveyid,'surveycontent','update')):?>
+                        <a class="btn btn-default" href="<?php echo $this->createUrl("admin/conditions/sa/index/subaction/editconditionsform/surveyid/$surveyid/gid/$gid/qid/$qid"); ?>" role="button">
+                            <span class="icon-conditions"></span>
+                            <?php eT("Set conditions "); ?>
+                        </a>
+                <?php else:?>
+                        <a class="btn disabled" href="#" role="button" onclick="alert('<?php eT("You don't have the necessary permission.","js"); ?>')">
+                            <span class="icon-conditions"></span>
+                            <?php eT("Set conditions "); ?>
+                        </a>
+                <?php endif;?>
+            <?php endif; ?>
 
             <!-- subquestions -->
-
-            <?php if(Permission::model()->hasSurveyPermission($surveyid,'surveycontent','read')):?>
-                <?php if($qtypes[$qrrow['type']]['subquestions'] >0):?>
-                    <a class="btn btn-default" href="<?php echo $this->createUrl('admin/questions/sa/subquestions/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid); ?>" role="button">
+            <?php if(isset($canmodify,$issuperadmin) && !$canmodify && !$issuperadmin ):?>
+                <span class="btntooltip" data-toggle="tooltip" data-placement="bottom" title="No tienes permiso para hacer esto" >
+                    <a class="btn btn-default disabled" href="#" role="button">
                         <span class="icon-defaultanswers"></span>
                         <?php eT("Edit subquestions "); ?>
                     </a>
+                </span>
+            <?php else: ?>
+                <?php if(Permission::model()->hasSurveyPermission($surveyid,'surveycontent','read')):?>
+                    <?php if($qtypes[$qrrow['type']]['subquestions'] >0):?>
+                        <a class="btn btn-default" href="<?php echo $this->createUrl('admin/questions/sa/subquestions/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid); ?>" role="button">
+                            <span class="icon-defaultanswers"></span>
+                            <?php eT("Edit subquestions "); ?>
+                        </a>
+                    <?php endif;?>
                 <?php endif;?>
-            <?php endif;?>
-
+            <?php endif; ?>
             <!-- Answer Options -->
-            <?php if( Permission::model()->hasSurveyPermission($surveyid,'surveycontent','read') && $qtypes[$qrrow['type']]['answerscales'] > 0 ):?>
-                <a class="btn btn-default" href="<?php echo $this->createUrl('admin/questions/sa/answeroptions/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid); ?>" role="button">
-                    <span class="icon-defaultanswers"></span>
-                    <?php eT("Edit answer options "); ?>
-                </a>
-            <?php endif;?>
-
+            <?php if(isset($canmodify,$issuperadmin) && !$canmodify && !$issuperadmin ):?>
+                <span class="btntooltip" data-toggle="tooltip" data-placement="bottom" title="No tienes permiso para hacer esto" >
+                    <a class="btn btn-default disabled" href="#" role="button">
+                        <span class="icon-defaultanswers"></span>
+                        <?php eT("Edit answer options "); ?>
+                    </a>
+                </span>
+            <?php else: ?>
+                <?php if( Permission::model()->hasSurveyPermission($surveyid,'surveycontent','read') && $qtypes[$qrrow['type']]['answerscales'] > 0 ):?>
+                    <a class="btn btn-default" href="<?php echo $this->createUrl('admin/questions/sa/answeroptions/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid); ?>" role="button">
+                        <span class="icon-defaultanswers"></span>
+                        <?php eT("Edit answer options "); ?>
+                    </a>
+                <?php endif;?>
+            <?php endif; ?>
 
             <!-- Default Values -->
-            <?php if(Permission::model()->hasSurveyPermission($surveyid,'surveycontent','read') && $qtypes[$qrrow['type']]['hasdefaultvalues'] >0):?>
-                    <a class="btn btn-default" href="<?php echo $this->createUrl('admin/questions/sa/editdefaultvalues/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid); ?>" role="button">
-                        <span class="icon-defaultanswers"></span>
-                        <?php eT("Edit default answers"); ?>
+            <?php if(isset($canmodify,$issuperadmin) && !$canmodify && !$issuperadmin ):?>
+                <span class="btntooltip" data-toggle="tooltip" data-placement="bottom" title="No tienes permiso para hacer esto" >
+                    <a class="btn btn-default disabled" href="#" role="button">
+                            <span class="icon-defaultanswers"></span>
+                            <?php eT("Edit default answers"); ?>
                     </a>
-            <?php endif;?>
+                </span>
+            <?php else: ?>
+                <?php if(Permission::model()->hasSurveyPermission($surveyid,'surveycontent','read') && $qtypes[$qrrow['type']]['hasdefaultvalues'] >0):?>
+                        <a class="btn btn-default" href="<?php echo $this->createUrl('admin/questions/sa/editdefaultvalues/surveyid/'.$surveyid.'/gid/'.$gid.'/qid/'.$qid); ?>" role="button">
+                            <span class="icon-defaultanswers"></span>
+                            <?php eT("Edit default answers"); ?>
+                        </a>
+                <?php endif;?>
+            <?php endif; ?>
     </div>
 <?php endif;?>
 

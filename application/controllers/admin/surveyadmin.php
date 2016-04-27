@@ -608,6 +608,22 @@ class SurveyAdmin extends Survey_Common_Action
         if (!Permission::model()->hasSurveyPermission($iSurveyID, 'surveyactivation', 'update')) die();
 
         $iSurveyID = (int) $iSurveyID;
+        /*
+         * ----------------------------------------------------------------------------------------------
+         * MODIFICACIÓN REALIZADA POR: ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 15/03/2016
+         * Número de líneas: 8
+         * Si no es super admin no puede activar una encuesta,
+         * Si es super admin pero esta intentando activar una encuesta que no es de él y además nunca se ha solicitado la activación, no lo deja proseguir y lo redirecciona a la vista de la encuesta.
+         * ----------------------------------------------------------------------------------------------
+         */
+        if (!Permission::model()->hasGlobalPermission('superadmin','read',Yii::app()->session['loginID'])) die();
+        $issuperadminandowner = $this->_is_superadmin_and_owner($iSurveyID);
+        $governancesurvey = GovernanceSurvey::model()->findByPk($iSurveyID);
+        if (!$issuperadminandowner && is_null($governancesurvey)) {
+            Yii::app()->setFlashMessage("Error - No se puede activar la encuesta si no se ha solicitado una activación","error");
+            $this->getController()->redirect(array("admin/survey/sa/view/surveyid/$iSurveyID"));
+            die();
+        }
 
         $aData = array();
         $aData['sidemenu']['state'] = false;
@@ -622,6 +638,14 @@ class SurveyAdmin extends Survey_Common_Action
         $qtypes = getQuestionTypeList('', 'array');
         Yii::app()->loadHelper("admin/activate");
 
+        /*
+         * ----------------------------------------------------------------------------------------------
+         * MODIFICACIÓN REALIZADA POR: ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 06/04/2016
+         * Número de líneas: 1
+         * Se captura el id de la persona que ha iniciado sesión
+         * ----------------------------------------------------------------------------------------------
+         */
+        $loginID = Yii::app()->session['loginID'];
         if (empty($_POST['ok']))
         {
             if (isset($_GET['fixnumbering']) && $_GET['fixnumbering'])
@@ -637,6 +661,14 @@ class SurveyAdmin extends Survey_Common_Action
             $aData['failedgroupcheck'] = $failedgroupcheck;
             $aData['aSurveysettings'] = getSurveyInfo($iSurveyID);
 
+            /*
+             * ----------------------------------------------------------------------------------------------
+             * MODIFICACIÓN REALIZADA POR: ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 06/04/2016
+             * Número de líneas: 1
+             * Se captura el nombre de la persona que está logueada y es enviado a la vista
+             * ----------------------------------------------------------------------------------------------
+             */
+            $aData['owner'] = User::model()->getName($loginID);
             $this->_renderWrappedTemplate('survey', 'activateSurvey_view', $aData);
         }
         else
@@ -689,6 +721,50 @@ class SurveyAdmin extends Survey_Common_Action
                     'closedOnclickAction'=>$closedOnclickAction,
                     'noOnclickAction'=>$noOnclickAction,
                 );
+                /*
+                 * ----------------------------------------------------------------------------------------------
+                 * MODIFICACIÓN REALIZADA POR: ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 15/03/2016
+                 * Número de líneas: 36 incluyendo comentarios
+                 * Se modifica el registro de la encuesta en la tabla de gobernancesurvey, actualizando el estado, fecha de modificación, respuesta a la solicitud y el id del usuario que realiza la modificación.
+                 * Se inserta en la tabla de historial de gobernancesurvey un nuevo registro con la misma información que se encuentra en la tabla de gobernancesurvey.
+                 * ----------------------------------------------------------------------------------------------
+                 */
+                if (!$issuperadminandowner) {
+                    // --- Obtengo los nuevos valores a modificar. --- //
+                    $request_state = "aprobada";
+                    $modification_date = date('Y-m-d');
+                    $request_response_post = Yii::app()->request->getPost('request_response');
+                    $request_response = ((isset($request_response_post) && $request_response_post != "") ? $request_response_post : "Su encuesta ha sido activada" );
+                    $modification_user_id = $loginID;
+                    // --- Encuentro el registro y modifico el valor de las columnas. --- //
+                    $governancesurvey = GovernanceSurvey::model()->findByPk($iSurveyID);
+                    $newgovernance = false;
+                    if (is_null($governancesurvey)) {
+                        $governancesurvey = new GovernanceSurvey;
+                        $governancesurvey->gosu_pk = $iSurveyID;
+                        $governancesurvey->govsur_user_fk = $loginID;
+                        $governancesurvey->gosu_requestjustification = "Encuesta de súper administrador";
+                        $governancesurvey->gosu_requestdate = date('Y-m-d');
+                        $newgovernance = true;
+                    }
+                    $governancesurvey->gosu_requeststate = $request_state;
+                    $governancesurvey->gosu_modificationdate = $modification_date;
+                    $governancesurvey->gosu_requestresponse = $request_response;
+                    $governancesurvey->gosu_user_fk = $modification_user_id;
+                    // --- Variables a insertar en el historial de gobernancesurvey --- //
+                    $historygovernancesurvey = new HistoryGovernanceSurvey;
+                    $historygovernancesurvey->higosu_surv_fk = $governancesurvey->gosu_pk;// como este en la tabla governance
+                    $historygovernancesurvey->higosu_users_fk = $governancesurvey->govsur_user_fk;// como este en la tabla governance
+                    $historygovernancesurvey->higosu_requestjustification = $governancesurvey->gosu_requestjustification;// como este en la tabla governance
+                    $historygovernancesurvey->higosu_requeststate = $request_state;//nuevo valor
+                    $historygovernancesurvey->higosu_requestdate = $governancesurvey->gosu_requestdate;// como este en la tabla governance
+                    $historygovernancesurvey->higosu_modificationdate = $modification_date;//nuevo valor
+                    $historygovernancesurvey->higosu_requestresponse = $request_response;//nuevo valor
+                    $historygovernancesurvey->higosu_user_fk = $modification_user_id;//nuevo valor
+                    // --- Se adiciona al historial de gobernaza --- //
+                    ($newgovernance ? $governancesurvey->save() : $governancesurvey->update());
+                    $historygovernancesurvey->save();
+                }
                 $aViewUrls['output'] = $this->getController()->renderPartial('/admin/survey/_activation_feedback', $activationData, true);
 
             }
@@ -904,6 +980,23 @@ class SurveyAdmin extends Survey_Common_Action
     */
     public function delete($iSurveyID)
     {
+        /*
+         * -------------------------------------------------------------------------------------
+         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
+         * Número de lineas: 8
+         * Se verifica si la encuesta se encuentra en la tabla de governancesurvey,
+         * si es así, no se podrá eliminar la encuesta, por el momento se redirecciona a la pantalla
+         * de adminstración de la encuesta.
+         * -------------------------------------------------------------------------------------
+         */
+        $loginID = Yii::app()->session['loginID'];
+        $issuperadmin = (Permission::model()->hasGlobalPermission('superadmin', 'read', $loginID));
+        $governancesurvey = GovernanceSurvey::model()->findByPk($iSurveyID);
+        if(!$issuperadmin && !is_null($governancesurvey)){
+            Yii::app()->setFlashMessage("Error - No tienes permisos para eliminar la encuesta porque ya has solicitado una activación, solo el súper administrador podrá eliminar la encuesta.","error");
+            $this->getController()->redirect(array("admin/survey/sa/view/surveyid/$iSurveyID"));
+            die();
+        }
         $aData = $aViewUrls = array();
         $aData['surveyid'] = $iSurveyID = (int) $iSurveyID;
         $aData['sidemenu']['state'] = false;
@@ -914,12 +1007,45 @@ class SurveyAdmin extends Survey_Common_Action
 
         if (Permission::model()->hasSurveyPermission($iSurveyID, 'survey', 'delete'))
         {
-            if (Yii::app()->request->getPost("delete") == 'yes')
+            if (Yii::app()->request->getPost("delete") == 'yes' && !empty($_POST['justification']))
             {
-                $aData['issuperadmin'] = Permission::model()->hasGlobalPermission('superadmin','read');
-                $this->_deleteSurvey($iSurveyID);
-                Yii::app()->session['flashmessage'] = gT("Survey deleted.");
-                $this->getController()->redirect(array("admin/index"));
+                /*
+                 * -------------------------------------------------------------------------------------
+                 * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 14/04/2016
+                 * Número de lineas: 28
+                 * Se verifica si la encuesta se encuentra en la tabla de governancesurvey,
+                 * si es así, no se podrá eliminar la encuesta, por el momento se redirecciona a la pantalla
+                 * de adminstración de la encuesta.
+                 * -------------------------------------------------------------------------------------
+                 */
+                $survey = Survey::model()->findByPk($iSurveyID);
+                if (!is_null($survey)) {
+                    $baselang = $survey->language;
+                    $surveylanguagesetting = SurveyLanguageSetting::model()->findByPk(array('surveyls_survey_id' => $iSurveyID, 'surveyls_language' => $baselang));
+                    if(!is_null($surveylanguagesetting)){
+                        $surveytitle = $surveylanguagesetting->surveyls_title; // Titulo de la encuesta
+                        $date =  date("Y-m-d"); // Fecha actual
+                        $owner = $survey->owner_id; // Dueño de la encuesta
+                        $loginID = Yii::app()->session['loginID']; // Actual super admin id
+                        $justification = Yii::app()->request->getPost("justification"); // Por qué se eliminará la encuesta
+
+                        $deletedsurvey = new DeletedSurvey;
+                        $deletedsurvey->desu_surveytitle = $surveytitle;
+                        $deletedsurvey->desu_deleteddate = $date;
+                        $deletedsurvey->desu_justification = $justification;
+                        $deletedsurvey->delsur_user_fk = $owner;
+                        $deletedsurvey->desu_user_fk = $loginID;
+                        $deletedsurvey->save();
+
+                        $aData['issuperadmin'] = Permission::model()->hasGlobalPermission('superadmin','read');
+                        $this->_deleteSurvey($iSurveyID);
+                        Yii::app()->session['flashmessage'] = gT("Survey deleted.");
+                        $this->getController()->redirect(array("admin/index"));
+                    }
+                }
+                Yii::app()->setFlashMessage("Error - La encuesta no ha podido ser eliminada.","error");
+                $this->getController()->redirect(array("admin/survey/sa/view/surveyid/$iSurveyID"));
+                die();
             }
             else
             {
@@ -959,6 +1085,15 @@ class SurveyAdmin extends Survey_Common_Action
     */
     public function editlocalsettings($iSurveyID)
     {
+        /*
+         * -------------------------------------------------------------------------------------
+         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
+         * Número de lineas: 1
+         * Se verifica si el usuario tiene permiso de modificación de la encuesta.
+         * Si no tiene es redireccionado a la página principal de la encuesta.
+         * -------------------------------------------------------------------------------------
+         */
+        $this->_verify_permission_modification($iSurveyID);
         $aData['surveyid'] = $iSurveyID = sanitize_int($iSurveyID);
         $aViewUrls = array();
 
@@ -1200,6 +1335,15 @@ class SurveyAdmin extends Survey_Common_Action
     */
     public function organize($iSurveyID)
     {
+        /*
+         * -------------------------------------------------------------------------------------
+         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
+         * Número de lineas: 1
+         * Se verifica si el usuario tiene permiso de modificación de la encuesta.
+         * Si no tiene es redireccionado a la página principal de la encuesta.
+         * -------------------------------------------------------------------------------------
+         */
+        $this->_verify_permission_modification($iSurveyID);
         $request = Yii::app()->request;
 
         $iSurveyID = (int) $iSurveyID;
@@ -1871,6 +2015,20 @@ class SurveyAdmin extends Survey_Common_Action
                 redirect($this->getController()->createUrl('admin'));
                 return;
             }
+            /*
+             * -------------------------------------------------------------------------------------
+             * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 25/04/2016
+             * Número de lineas: 6
+             * Se verifica que el título de la encuesta no esté vacío, si es así,
+             * se redirecciona, se muestra un mensaje y se finaliza el script.
+             * -------------------------------------------------------------------------------------
+             */
+            $sTitle = $_POST['surveyls_title'];
+            if(trim($sTitle) == ""){
+                Yii::app()->setflashmessage("El título no puede quedar vacío, por favor inténtelo de nuevo.", "error");
+                $this->getController()->redirect(array('admin/survey/sa/newsurvey'));
+                die();
+            }
 
             Yii::app()->loadHelper("surveytranslator");
             // If start date supplied convert it to the right format
@@ -2030,4 +2188,318 @@ class SurveyAdmin extends Survey_Common_Action
         parent::_renderWrappedTemplate($sAction, $aViewUrls, $aData);
     }
 
-}
+    /**
+     * Función que permite a un administrador de encuesta la solicitud de activación de su encuesta.
+     * @access public
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 15/03/2016 
+     * @param int $iSurveyID
+     * @return void
+     */
+    public function request($iSurveyID){
+        // Verifico si el usuario actual tiene permisos de actualización sobre la encuesta en cuestión.
+        // Esto para evitar que mediante la url solicite activaciones de encuestas a las cuales no tiene
+        // permismo de actualizar.
+        if (!Permission::model()->hasSurveyPermission($iSurveyID, 'surveyactivation', 'update')){
+            die();
+        } 
+        $loginID = Yii::app()->session['loginID'];
+
+        $iSurveyID = (int) $iSurveyID;
+
+        $aData = array();
+        $aData['sidemenu']['state'] = false;
+        $aData['aSurveysettings'] = getSurveyInfo($iSurveyID);
+        $aData['surveyid'] = $iSurveyID;
+        $surveyinfo = Survey::model()->findByPk($iSurveyID)->surveyinfo;
+        $aData['title_bar']['title'] = $surveyinfo['surveyls_title']."(".gT("ID").":".$iSurveyID.")";
+        // Die if this is not possible
+        if (!isset($aData['aSurveysettings']['active']) || $aData['aSurveysettings']['active'] == 'Y')
+            $this->getController()->error('Survey not active');
+
+        $qtypes = getQuestionTypeList('', 'array');
+        Yii::app()->loadHelper("admin/activate");
+
+        if (empty($_POST['information'])){
+            // Check consistency for groups and questions
+            $failedgroupcheck = checkGroup($iSurveyID);
+            $failedcheck = checkQuestions($iSurveyID, $iSurveyID, $qtypes);
+
+            $aData['failedcheck'] = $failedcheck;
+            $aData['failedgroupcheck'] = $failedgroupcheck;
+            $aData['aSurveysettings'] = getSurveyInfo($iSurveyID);
+            $aData['urlsubmit'] = "admin/survey/sa/request/surveyid/{$iSurveyID}/";
+            $aData['owner'] = User::model()->getName($loginID);
+            $this->_renderWrappedTemplate('survey', 'activationRequestSurvey_view', $aData);
+        }
+        else{
+            $survey = Survey::model()->findByAttributes(array('sid' => $iSurveyID));
+            if (!is_null($survey))
+            {
+                $survey->anonymized = Yii::app()->request->getPost('anonymized');
+                $survey->datestamp = Yii::app()->request->getPost('datestamp');
+                $survey->ipaddr = Yii::app()->request->getPost('ipaddr');
+                $survey->refurl = Yii::app()->request->getPost('refurl');
+                $survey->savetimings = Yii::app()->request->getPost('savetimings');
+                $survey->save();
+                Survey::model()->resetCache();  // Make sure the saved values will be picked up
+
+                // --- Variables a insertar --- //
+                $request_survey_id = $survey->sid;
+                $request_owner_id = $loginID;
+                $request_justification = Yii::app()->request->getPost('justification');
+                $request_state = "pendiente";
+                $request_date = date("Y-m-d");
+                $modification_date =  date("Y-m-d");
+                $request_response = "Pendiente de revisión";
+                $modification_user_id = $loginID;
+                // --- Insertar variables --- //
+                $historygovernancesurvey = new HistoryGovernanceSurvey;
+                $governancesurvey = GovernanceSurvey::model()->findByPk($survey->sid);
+                if(is_null($governancesurvey)){
+                    $governancesurvey = new GovernanceSurvey;
+                }
+                $governancesurvey->gosu_pk = $historygovernancesurvey->higosu_surv_fk = $request_survey_id;
+                $governancesurvey->govsur_user_fk = $historygovernancesurvey->higosu_users_fk = $request_owner_id;
+                $governancesurvey->gosu_requestjustification = $historygovernancesurvey->higosu_requestjustification = $request_justification;
+                $governancesurvey->gosu_requeststate = $historygovernancesurvey->higosu_requeststate = $request_state;
+                $governancesurvey->gosu_requestdate = $historygovernancesurvey->higosu_requestdate = $request_date;
+                $governancesurvey->gosu_modificationdate = $historygovernancesurvey->higosu_modificationdate = $modification_date;
+                $governancesurvey->gosu_requestresponse = $historygovernancesurvey->higosu_requestresponse = $request_response;
+                $governancesurvey->gosu_user_fk = $historygovernancesurvey->higosu_user_fk = $modification_user_id;
+
+                // --- Se adiciona a gobernancesurvey --- //
+                $governancesurvey->save();
+                // --- Se adiciona al historial de gobernaza --- //
+                $historygovernancesurvey->save();
+
+                $noOnclickAction = convertGETtoPOST(Yii::app()->getController()->createUrl("admin/survey/sa/view/surveyid/".$request_survey_id));
+                $activationData = array(
+                    'iSurveyID'=>$request_survey_id,
+                    'closedOnclickAction'=>$noOnclickAction,
+                );
+                $aViewUrls['output'] = $this->getController()->renderPartial('/admin/survey/_activationRequest_feedback', $activationData, true);
+            }
+            $this->_renderWrappedTemplate('survey', $aViewUrls, $aData);
+        }
+    }
+
+    /**
+     * Función que permite a un super administrador asignar el estado de una solicitud de activación de encuesta a "requiere ajustes" donde el super administrador proporcionará más información sobre los ajustes
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 15/03/2016 
+     * @param  int $iSurveyID identificador único de la encuesta
+     * @return void
+     */
+    public function requiresadjustments($iSurveyID){
+        // Si no es super admin no puede responder a la solicitud
+        if (!Permission::model()->hasGlobalPermission('superadmin','read',Yii::app()->session['loginID'])) die(); 
+        $loginID = Yii::app()->session['loginID'];
+        $iSurveyID = (int) $iSurveyID;
+        $aData = array();
+        $aData['sidemenu']['state'] = false;
+        $aData['aSurveysettings'] = getSurveyInfo($iSurveyID);
+        $aData['surveyid'] = $iSurveyID;
+        $surveyinfo = Survey::model()->findByPk($iSurveyID)->surveyinfo;
+        $aData['title_bar']['title'] = $surveyinfo['surveyls_title']."(".gT("ID").":".$iSurveyID.")";
+
+        // Die if this is not possible
+        if (!isset($aData['aSurveysettings']['active']) || $aData['aSurveysettings']['active'] == 'Y')
+            $this->getController()->error('Survey not active');
+        if (empty($_POST['information'])){
+            $aData['urlsubmit'] = "admin/survey/sa/requiresadjustments/surveyid/{$iSurveyID}/";
+            $this->_renderWrappedTemplate('survey', "requiresAdjustmentsSurvey_view", $aData);
+        }
+        else{
+            $survey = Survey::model()->findByAttributes(array('sid' => $iSurveyID));
+            $governancesurvey = GovernanceSurvey::model()->findByPk($iSurveyID);
+            if (!is_null($survey) && !is_null($governancesurvey)){
+
+                $surveyid = $survey->sid;
+                $request_state = "requiere ajustes";
+                $modification_date = date('Y-m-d');
+                $request_response_post = Yii::app()->request->getPost('request_response');
+                $request_response = ((isset($request_response_post) && $request_response_post != "") ? $request_response_post : "Su encuesta requiere ajustes, el super administrador no ha proporcionado más información." );
+                $modification_user_id = $loginID;
+                $governancesurvey->gosu_requeststate = $request_state;
+                $governancesurvey->gosu_modificationdate = $modification_date;
+                $governancesurvey->gosu_requestresponse = $request_response;
+                $governancesurvey->gosu_user_fk = $modification_user_id;
+                
+                // --- Variables a insertar en el historial de gobernancesurvey --- //
+                $historygovernancesurvey = new HistoryGovernanceSurvey;
+                $historygovernancesurvey->higosu_surv_fk = $governancesurvey->gosu_pk;// como este en la tabla governance
+                $historygovernancesurvey->higosu_users_fk = $governancesurvey->govsur_user_fk;// como este en la tabla governance
+                $historygovernancesurvey->higosu_requestjustification = $governancesurvey->gosu_requestjustification;// como este en la tabla governance
+                $historygovernancesurvey->higosu_requeststate = $request_state;//nuevo valor
+                $historygovernancesurvey->higosu_requestdate = $governancesurvey->gosu_requestdate;// como este en la tabla governance
+                $historygovernancesurvey->higosu_modificationdate = $modification_date;//nuevo valor
+                $historygovernancesurvey->higosu_requestresponse = $request_response;//nuevo valor
+                $historygovernancesurvey->higosu_user_fk = $modification_user_id;//nuevo valor
+                // --- Se adiciona al historial de gobernancesurvey --- //
+                $governancesurvey->update();
+                $historygovernancesurvey->save();
+                $noOnclickAction = convertGETtoPOST(Yii::app()->getController()->createUrl("admin/survey/sa/view/surveyid/".$surveyid));
+                $activationData = array(
+                        'iSurveyID'=>$iSurveyID,
+                        'closedOnclickAction'=>$noOnclickAction,
+                    );
+                $aViewUrls['output'] = $this->getController()->renderPartial('/admin/survey/_requiresAdjustments_feedback', $activationData, true);
+            }
+            $this->_renderWrappedTemplate('survey', $aViewUrls, $aData);
+        }
+    }
+
+    /**
+     * Función que permite a un super administrador asignar el estado de una solicitud de activación de encuesta a "rechazada" donde el super administrador proporcionará más información sobre el porqué del estado de la solicitud asignado
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 05/04/2016 
+     * @param  int $iSurveyID Identificador único de la encuesta
+     * @return void
+     */
+    public function rejected($iSurveyID){
+        // Si no es super admin no puede responder a la solicitud
+        if (!Permission::model()->hasGlobalPermission('superadmin','read',Yii::app()->session['loginID'])) die(); 
+        $loginID = Yii::app()->session['loginID'];
+        $iSurveyID = (int) $iSurveyID;
+        $aData = array();
+        $aData['sidemenu']['state'] = false;
+        $aData['aSurveysettings'] = getSurveyInfo($iSurveyID);
+        $aData['surveyid'] = $iSurveyID;
+        $surveyinfo = Survey::model()->findByPk($iSurveyID)->surveyinfo;
+        $aData['title_bar']['title'] = $surveyinfo['surveyls_title']."(".gT("ID").":".$iSurveyID.")";
+        // Die if this is not possible
+        if (!isset($aData['aSurveysettings']['active']) || $aData['aSurveysettings']['active'] == 'Y')
+            $this->getController()->error('Survey not active');
+        if (empty($_POST['information'])){
+            $aData['urlsubmit'] = "admin/survey/sa/rejected/surveyid/{$iSurveyID}/";
+            $this->_renderWrappedTemplate('survey', "rejectedSurvey_view", $aData);
+        }
+        else{
+            $survey = Survey::model()->findByAttributes(array('sid' => $iSurveyID));
+            $governancesurvey = GovernanceSurvey::model()->findByPk($iSurveyID);
+            if (!is_null($survey) && !is_null($governancesurvey)){
+
+                $surveyid = $survey->sid;
+                $request_state = "rechazada";
+                $modification_date = date('Y-m-d');
+                $request_response_post = Yii::app()->request->getPost('request_response');
+                $request_response = ((isset($request_response_post) && $request_response_post != "") ? $request_response_post : "Su encuesta fue rechazada, el super administrador no ha proporcionado más información." );
+                $modification_user_id = $loginID;
+                $governancesurvey->gosu_requeststate = $request_state;
+                $governancesurvey->gosu_modificationdate = $modification_date;
+                $governancesurvey->gosu_requestresponse = $request_response;
+                $governancesurvey->gosu_user_fk = $modification_user_id;
+                
+                // --- Variables a insertar en el historial de gobernancesurvey --- //
+                $historygovernancesurvey = new HistoryGovernanceSurvey;
+                $historygovernancesurvey->higosu_surv_fk = $governancesurvey->gosu_pk;// como este en la tabla governance
+                $historygovernancesurvey->higosu_users_fk = $governancesurvey->govsur_user_fk;// como este en la tabla governance
+                $historygovernancesurvey->higosu_requestjustification = $governancesurvey->gosu_requestjustification;// como este en la tabla governance
+                $historygovernancesurvey->higosu_requeststate = $request_state;//nuevo valor
+                $historygovernancesurvey->higosu_requestdate = $governancesurvey->gosu_requestdate;// como este en la tabla governance
+                $historygovernancesurvey->higosu_modificationdate = $modification_date;//nuevo valor
+                $historygovernancesurvey->higosu_requestresponse = $request_response;//nuevo valor
+                $historygovernancesurvey->higosu_user_fk = $modification_user_id;//nuevo valor
+                // --- Se adiciona al historial de gobernancesurvey --- //
+                $governancesurvey->update();
+                $historygovernancesurvey->save();
+                $noOnclickAction = convertGETtoPOST(Yii::app()->getController()->createUrl("admin/survey/sa/view/surveyid/".$surveyid));
+                $activationData = array(
+                        'iSurveyID'=>$iSurveyID,
+                        'closedOnclickAction'=>$noOnclickAction,
+                    );
+                $aViewUrls['output'] = $this->getController()->renderPartial('/admin/survey/_rejectedSurvey_feedback', $activationData, true);
+            }
+            $this->_renderWrappedTemplate('survey', $aViewUrls, $aData);
+        }
+    }
+
+    /**
+     * Función que permite listar todas las solictudes de activación de encuestas.
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 15/03/2016 
+     * @return void No retorna nada, reenderiza a la vista survey/listRequests_view
+     */
+    public function listrequests(){
+        $aData['model'] = $model = new GovernanceSurvey('search');
+        // Search
+        if (isset($_GET['GovernanceSurvey']['searched_value']))
+        {
+            $model->searched_value = $_GET['GovernanceSurvey']['searched_value'];
+        }
+        // Set number of page
+        if (isset($_GET['pageSize']))
+        {
+            Yii::app()->user->setState('pageSize',(int)$_GET['pageSize']);
+        }
+        $this->_renderWrappedTemplate('survey', 'listRequests_view', $aData);
+    }
+
+    /**
+     * Función que permite listar todos los historicos de una encuesta
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 15/03/2016
+     * @param int $iSurveyID identificador único de la encuesta
+     * @return void No retorna nada, reenderiza a la vista survey/listRequestsHistory_view
+     */
+    public function listrequestshistory($iSurveyID){
+        $aData['model'] = $model = new HistoryGovernanceSurvey('search'); 
+        $aData['iSurveyID'] = $iSurveyID;
+        // Search
+        if (isset($_GET['HistoryGovernanceSurvey']['searched_value']))
+        {
+            $model->searched_value = $_GET['HistoryGovernanceSurvey']['searched_value'];
+        }
+        // Set number of page
+        if (isset($_GET['pageSize']))
+        {
+            Yii::app()->user->setState('pageSize',(int)$_GET['pageSize']);
+        }
+        $this->_renderWrappedTemplate('survey', 'listRequestsHistory_view', $aData);
+    }
+
+    /**
+     * Función que permite mostrar las políticas de GESEN-UQ
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 10/04/2016
+     * @return void Reenderiza la vista de las políticas.
+     */
+    public function politices(){
+        $this->_renderWrappedTemplate('super','politices_view');
+    }
+
+    /**
+     * Función que permite listar las encuestas propias del usuario logueado.
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 25/04/2016
+     * @return sin retorno No retorna nada, solo redirecciona a una vista listMySurveys_view
+     */
+    public function listmysurveys(){
+        Yii::app()->loadHelper('surveytranslator');
+
+        $aData['issuperadmin'] = false;
+        if (Permission::model()->hasGlobalPermission('superadmin','read'))
+        {
+            $aData['issuperadmin'] = true;
+        }
+
+        $aData['model'] = $model =  new Survey('search');
+        // Search
+        if (isset($_GET['Survey']['searched_value']))
+        {
+            $model->searched_value = $_GET['Survey']['searched_value'];
+        }
+
+        $model->active = null;
+
+        // Filter state
+        if (isset($_GET['active']) && !empty($_GET['active']))
+        {
+            $model->active = $_GET['active'];
+        }
+
+        // Set number of page
+        if (isset($_GET['pageSize']))
+        {
+            Yii::app()->user->setState('pageSize',(int)$_GET['pageSize']);
+        }
+
+        $aData['fullpagebar']['button']['newsurvey'] = true;
+        $this->_renderWrappedTemplate('survey', 'listMySurveys_view', $aData);
+    }
+
+} // Close surveyadmin class

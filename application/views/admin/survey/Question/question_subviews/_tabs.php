@@ -33,7 +33,14 @@
         <div class="form-group">
                 <label class="col-sm-3 control-label"  for='title'><?php eT("Code:"); ?></label>
                 <div class="col-sm-9">
-                    <?php echo CHtml::textField("title",$eqrow['title'],array('class'=>'form-control','size'=>"20",'maxlength'=>'20','pattern'=>$sPattern,"autofocus"=>"autofocus",'id'=>"title")); ?>
+                    <?php /*
+                         * ----------------------------------------------------------------------------------------------
+                         * MODIFICACIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 25/04/2016
+                         * Número de líneas: 1
+                         * Se modifica el tamaño máximo del titulo (código) de la pregunta, para que soporte 50 caracteres, por defecto venía en 20.
+                         * ----------------------------------------------------------------------------------------------
+                         */?>
+                    <?php echo CHtml::textField("title",$eqrow['title'],array('class'=>'form-control','size'=>"50",'maxlength'=>'50','pattern'=>$sPattern,"autofocus"=>"autofocus",'id'=>"title")); ?>
                     <span class='text-warning'><?php  eT("Required"); ?> </span>
                 </div>
         </div>

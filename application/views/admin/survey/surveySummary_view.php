@@ -92,7 +92,7 @@ $surveyid = $surveyinfo['sid'];
                         <!-- Add Question / group -->
                         <div class="row">
                             <!-- Survey active, so it's impossible to add new group/question -->
-                            <?php if ($activated == "Y"): ?>
+                            <?php if ($activated == "Y" || !$canmodify && !$issuperadmin ): ?>
 
                                     <!-- Can't add new group to survey  -->
                                     <div class="col-sm-6">
@@ -101,7 +101,7 @@ $surveyid = $surveyinfo['sid'];
                                                 <h4 class="panel-title"><?php eT('Add group');?></h4>
                                             </div>
                                             <div class="panel-body">
-                                                <a  href="#" data-toggle="tooltip" data-placement="bottom" title="<?php eT("This survey is currently active."); ?>" style="display: inline-block" data-toggle="tooltip">
+                                                <a  href="#" data-toggle="tooltip" data-placement="bottom" title="<?php eT("Esta encuesta está actualmente activa o su estado se encuentra en pendiente."); ?>" style="display: inline-block" data-toggle="tooltip">
                                                     <span class="icon-add text-success"  style="font-size: 3em;"></span>
                                                 </a>
                                                 <p><a href="#"><?php eT('Add new group');?></a></p>
@@ -115,12 +115,12 @@ $surveyid = $surveyinfo['sid'];
                                             <div class="panel-heading">
                                                 <h4 class="panel-title  disabled"><?php eT('Add question');?></h4>
                                             </div>
-                                            <div class="panel-body  ">
-                                                <a href="#" data-toggle="tooltip" data-placement="bottom" title="<?php eT("This survey is currently active."); ?>" style="display: inline-block" data-toggle="tooltip">
+                                            <div class="panel-body">
+                                                <a href="#" data-toggle="tooltip" data-placement="bottom" title="<?php eT("Esta encuesta está actualmente activa o su estado se encuentra en pendiente."); ?>" style="display: inline-block" data-toggle="tooltip">
                                                     <span class="icon-add text-success"  style="font-size: 3em;"></span>
                                                 </a>
                                                 <p>
-                                                    <a  href="#" data-toggle="tooltip" data-placement="bottom" title="<?php eT("This survey is currently active."); ?>" style="display: inline-block" data-toggle="tooltip" data-placement="bottom" title="<?php eT('Survey cannot be activated. Either you have no permission or there are no questions.'); ?>">
+                                                    <a  href="#" data-toggle="tooltip" data-placement="bottom" title="<?php eT("Esta encuesta está actualmente activa o su estado se encuentra en pendiente."); ?>" style="display: inline-block" data-toggle="tooltip" data-placement="bottom" title="<?php eT('Survey cannot be activated. Either you have no permission or there are no questions.'); ?>">
                                                         <?php eT("Add new question"); ?>
                                                     </a>
                                                 </p>
@@ -129,7 +129,7 @@ $surveyid = $surveyinfo['sid'];
                                     </div>
 
                                     <!-- survey is not active, and user has permissions, so buttons are shown and active -->
-                                <?php elseif(Permission::model()->hasSurveyPermission($surveyinfo['sid'],'surveycontent','create')): ?>
+                                <?php elseif(Permission::model()->hasSurveyPermission($surveyinfo['sid'],'surveycontent','create') && ($canmodify || $issuperadmin) ): ?>
 
                                     <!-- Add group -->
                                     <div class="col-sm-6">
@@ -190,7 +190,7 @@ $surveyid = $surveyinfo['sid'];
 
 
                                 <!-- Edit text elements and general settings -->
-                                <?php if($surveylocale && $surveysettings): ?>
+                                <?php if($surveylocale && $surveysettings && ($canmodify || $issuperadmin)): ?>
                                     <div class="panel panel-primary panel-clickable" id="pannel-3" data-url="<?php echo $this->createUrl("admin/survey/sa/editlocalsettings/surveyid/".$surveyinfo['sid']); ?>">
                                         <div class="panel-heading">
                                             <h4 class="panel-title"><?php eT('Edit text elements and general settings');?></h4>
