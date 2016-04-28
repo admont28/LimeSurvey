@@ -138,15 +138,6 @@ class questions extends Survey_Common_Action
      */
     public function importView($groupid = null, $surveyid)
     {
-        /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
-         * Número de lineas: 1
-         * Se verifica si el usuario tiene permiso de modificación de la encuesta.
-         * Si no tiene es redireccionado a la página principal de la encuesta.
-         * -------------------------------------------------------------------------------------
-         */
-        $this->_verify_permission_modification($surveyid);
         $iSurveyID = $surveyid = sanitize_int($surveyid);
         if (Permission::model()->hasSurveyPermission($surveyid,'surveycontent','import'))
         {
@@ -871,15 +862,6 @@ class questions extends Survey_Common_Action
      */
     public function newquestion($surveyid)
     {   
-        /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
-         * Número de lineas: 1
-         * Se verifica si el usuario tiene permiso de modificación de la encuesta.
-         * Si no tiene es redireccionado a la página principal de la encuesta.
-         * -------------------------------------------------------------------------------------
-         */
-        $this->_verify_permission_modification($surveyid);
         Yii::app()->loadHelper('admin/htmleditor');
         $surveyid = $iSurveyID = $aData['surveyid'] = sanitize_int($surveyid);
         App()->getClientScript()->registerPackage('qTip2');
@@ -1009,15 +991,6 @@ class questions extends Survey_Common_Action
     */
     public function index($sa, $surveyid, $gid, $qid=null)
     {   
-        /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
-         * Número de lineas: 1
-         * Se verifica si el usuario tiene permiso de modificación de la encuesta.
-         * Si no tiene es redireccionado a la página principal de la encuesta.
-         * -------------------------------------------------------------------------------------
-         */
-        $this->_verify_permission_modification($surveyid);
         App()->getClientScript()->registerPackage('qTip2');
         $action = $sa;
         $surveyid = $iSurveyID = sanitize_int($surveyid);
@@ -1263,15 +1236,6 @@ class questions extends Survey_Common_Action
     */
     public function delete($surveyid, $gid, $qid)
     {   
-        /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
-         * Número de lineas: 1
-         * Se verifica si el usuario tiene permiso de modificación de la encuesta.
-         * Si no tiene es redireccionado a la página principal de la encuesta.
-         * -------------------------------------------------------------------------------------
-         */
-        $this->_verify_permission_modification($surveyid);
         $surveyid = sanitize_int($surveyid);
         $gid = sanitize_int($gid);
         $qid = sanitize_int($qid);

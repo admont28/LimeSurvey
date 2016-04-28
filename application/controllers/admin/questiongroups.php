@@ -100,15 +100,6 @@ class questiongroups extends Survey_Common_Action
      */
     function importView($surveyid)
     {
-        /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
-         * Número de lineas: 1
-         * Se verifica si el usuario tiene permiso de modificación de la encuesta.
-         * Si no tiene es redireccionado a la página principal de la encuesta.
-         * -------------------------------------------------------------------------------------
-         */
-        $this->_verify_permission_modification($surveyid);
         $iSurveyID = $surveyid = sanitize_int($surveyid);
         if (Permission::model()->hasSurveyPermission($surveyid,'surveycontent','import'))
         {
@@ -142,15 +133,6 @@ class questiongroups extends Survey_Common_Action
      */
     function add($surveyid)
     {
-        /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
-         * Número de lineas: 1
-         * Se verifica si el usuario tiene permiso de modificación de la encuesta.
-         * Si no tiene es redireccionado a la página principal de la encuesta.
-         * -------------------------------------------------------------------------------------
-         */
-        $this->_verify_permission_modification($surveyid);
         /////
         $iSurveyID = $surveyid = sanitize_int($surveyid);
         $aViewUrls = $aData = array();
@@ -323,15 +305,6 @@ class questiongroups extends Survey_Common_Action
      */
     public function delete($iSurveyId, $iGroupId)
     {
-        /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
-         * Número de lineas: 1
-         * Se verifica si el usuario tiene permiso de modificación de la encuesta.
-         * Si no tiene es redireccionado a la página principal de la encuesta.
-         * -------------------------------------------------------------------------------------
-         */
-        $this->_verify_permission_modification($iSurveyId);
         $iSurveyId = sanitize_int($iSurveyId);
 
         if (Permission::model()->hasSurveyPermission($iSurveyId, 'surveycontent', 'delete'))
@@ -398,15 +371,6 @@ class questiongroups extends Survey_Common_Action
      */
     public function edit($surveyid, $gid)
     {   
-        /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
-         * Número de lineas: 1
-         * Se verifica si el usuario tiene permiso de modificación de la encuesta.
-         * Si no tiene es redireccionado a la página principal de la encuesta.
-         * -------------------------------------------------------------------------------------
-         */
-        $this->_verify_permission_modification($surveyid);
         $surveyid = $iSurveyID = sanitize_int($surveyid);
         $gid = sanitize_int($gid);
         $aViewUrls = $aData = array();
