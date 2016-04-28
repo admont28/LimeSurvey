@@ -251,23 +251,6 @@ class Survey_Common_Action extends CAction
         //// This check will be useless when it will be handle directly by each specific controller.
         if (!empty($aData['surveyid']))
         {
-            /*
-             * -------------------------------------------------------------------------------------
-             * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 10/04/2016
-             * Número de lineas: 6
-             * Primero se obtiene el id del usuario logueado.
-             * Luego se verifica si el usuario logueado es super administrador.
-             * Luego se consulta por el estado de la solicitud y si puede modificar o no la estructura de la encuesta 
-             * luego se verifica si puede editar la estructura de la encuesta. es decir, si no existe en la tabla de governanza o si su estado es requiere ajustes podrá modificar.
-             * Por último se obtiene el estado de la solicitud de la encuesta.
-             * -------------------------------------------------------------------------------------
-             */
-            $loginID = Yii::app()->session['loginID'];
-            $aData['issuperadmin'] = (Permission::model()->hasGlobalPermission('superadmin', 'read', $loginID));
-            $result = $this->_canmodify_and_request_state($aData['surveyid']);
-            $aData['issuperadminandowner'] = $this->_is_superadmin_and_owner($aData['surveyid']);
-            $aData['canmodify'] = isset($result['canmodify']) ? $result['canmodify'] : null; 
-            $aData['request_state'] = isset($result['request_state']) ? $result['request_state'] : null;
             //// TODO : check what is doing exactly this function. (application/helpers/expressions/em_manager_helper.php)
             //// If it's about initialiazing global variables, should be removed and parsed in right controllers.
             //// But it seems that it's just useless.
@@ -743,86 +726,17 @@ class Survey_Common_Action extends CAction
 
             //Parse data to send to view
             $aData['surveyinfo'] = $surveyinfo;
-            /*
-             * -------------------------------------------------------------------------------------
-             * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 16/03/2016
-             * Número de lineas: 18 incluyendo comentarios
-             * Primero se verifica si el usuario actual es super administrador y es dueño de la encuesta en cuestión, si es así no se verificará el estado en la tabla de GovernanceSurvey porque no existe la encuesta en dicha tabla.
-             * Si no es dueño de la encuesta en cuestión, se verifica que la encuesta esté aceptada para poder consultar por la activación.
-             * -------------------------------------------------------------------------------------
-             */
-            $governancesurvey = GovernanceSurvey::model()->findByPk($iSurveyID);
-            $issuperadminandowner = $this->_is_superadmin_and_owner($iSurveyID);
-            if(!$issuperadminandowner){
-                $loginID = Yii::app()->session['loginID'];
-                $aData['issuperadmin'] = (Permission::model()->hasGlobalPermission('superadmin', 'read', $loginID));
-                if(!is_null($governancesurvey) && $governancesurvey->gosu_requeststate == "aprobada" && $surveyinfo['active'] == 'Y'){
-                    $activated = true;
-                }
-                else{
-                    $activated = false;
-                }
-            }
-            //$activated = ($surveyinfo['active'] == 'Y');
-            /*
-             * -------------------------------------------------------------------------------------
-             * FIN ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 16/03/2016
-             * -------------------------------------------------------------------------------------
-             */
+
+            $activated = ($surveyinfo['active'] == 'Y');
 
             // ACTIVATE SURVEY BUTTON
             $aData['activated'] = $activated;
 
             $condition = array('sid' => $iSurveyID, 'parent_qid' => 0, 'language' => $baselang);
-
             $sumcount3 = Question::model()->countByAttributes($condition); //Checked
-            /*
-             * -------------------------------------------------------------------------------------
-             * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 16/03/2016
-             * Número de líneas: 35 incluyendo comentarios
-             * Se verifica que el usuario actual sea super administrador para permitirle activar y 
-             * desactivar encuentas.
-             * -------------------------------------------------------------------------------------
-             */
-            // Se verifica que sea super administrador y que la ecuesta no esté activada
-            if($aData['issuperadmin'] && !$activated ){
-                if ($issuperadminandowner) {
-                    $canactivate = $sumcount3 > 0 ; // se verifica que posea más de 1 pregunta la encuesta
-                }elseif(!is_null($governancesurvey)){
-                    $canactivate = $sumcount3 > 0 ;
-                }
-                else{
-                    $canactivate = false;
-                }
-            }
-            else{
-                $canactivate = false;
-            }
-            if($aData['issuperadmin'] && $activated){
-                $candeactivate = true;
-            }
-            else{
-                $candeactivate = false;
-            }
-            $aData['canactivate'] = $canactivate;
-            $aData['candeactivate'] = $candeactivate;
-            // Verifico si el super administrador es el mismo dueño de la encuesta, esto se hace para quitar las acciones de la encuesta y que quede solo activar encuesta.
-            $aData['issuperadminandowner'] = $issuperadminandowner;
-
-            // Si no es super administrador y la encuesta tiene preguntas y el usuario tiene permisos de actualización de la encuesta puede solicitar la activación,
-            // Pero si la solicitud existe en la bd y si estado es distinto de requiere ajustes, no puede solicitar activación
-            $canrequest = false;
-            if(!$aData['issuperadmin'] && $sumcount3 > 0 && Permission::model()->hasSurveyPermission($iSurveyID, 'surveyactivation', 'update')){
-                $canrequest = true;
-                if(!is_null($governancesurvey) && $governancesurvey->gosu_requeststate != "requiere ajustes"){
-                    $canrequest = false;
-                }
-            }
-            $aData['canrequest'] = $canrequest;
-            // -------------------------- INICIO - CODIGO ORIGINAL --------------------------------
-            //$aData['canactivate'] = $sumcount3 > 0 && Permission::model()->hasSurveyPermission($iSurveyID, 'surveyactivation', 'update');
-            //$aData['candeactivate'] = Permission::model()->hasSurveyPermission($iSurveyID, 'surveyactivation', 'update');
-            // -------------------------- FIN ---- CODIGO ORIGINAL --------------------------------
+            
+            $aData['canactivate'] = $sumcount3 > 0 && Permission::model()->hasSurveyPermission($iSurveyID, 'surveyactivation', 'update');
+            $aData['candeactivate'] = Permission::model()->hasSurveyPermission($iSurveyID, 'surveyactivation', 'update');
             $aData['expired'] = $surveyinfo['expires'] != '' && ($surveyinfo['expires'] < dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig('timeadjust')));
             $aData['notstarted'] = ($surveyinfo['startdate'] != '') && ($surveyinfo['startdate'] > dateShift(date("Y-m-d H:i:s"), "Y-m-d H:i", Yii::app()->getConfig('timeadjust')));
 
@@ -1408,75 +1322,6 @@ class Survey_Common_Action extends CAction
         while (!mkdir($path, $mode));
 
         return $path;
-    }
-
-    /**
-     * Función que permite saber si se puede modificar la estructura de una encuesta o no, además retorna el estado de la solicitud.
-     * Esto lo hace verificando que no exista en la tabla de governance la encuesta, 
-     * y si existe su estado debe ser "requiere ajustes" para poder ser modificada
-     * @author Andrés David Montoya Aguirre - CSNT - 09/04/2016
-     * @param  int $iSurveyID Identificador único de la encuesta
-     * @return Array            Retorna la posición 'canmodify' con true en caso de que la encuesta puede ser modificada, de lo contrario sería false, retorna otra posición 'request_state' con el estado de la solicitud en caso de que exista en la tabla de governance, de lo contrario esta posición no existiría.
-     */
-    protected function _canmodify_and_request_state($iSurveyID){
-        $governancesurvey = GovernanceSurvey::model()->findByPk($iSurveyID);
-        $result = array();
-        $result['canmodify'] = false;
-        if (is_null($governancesurvey)) {
-            $result['canmodify'] = true;
-            $result['request_state'] = null;
-        }
-        else{
-            if($governancesurvey->gosu_requeststate=="requiere ajustes"){
-                $result['canmodify'] = true;
-            }
-            $result['request_state'] = $governancesurvey->gosu_requeststate;
-        }
-        return $result;
-    }
-
-    /**
-     * Verifica si el usuario logueado tiene permisos de modificación sobre la encuesta pasada por parámetro.
-     * @author Andrés David Montoya Aguirre - CSNT - 15/04/2016
-     * @param  int $iSurveyID Identificador único de la encuesta.
-     * @return void            Si el usuario no tiene permisos de modificación sobre la encuesta, es redireccionado a la pantalla de administración de la encuesta.
-     */
-    protected function _verify_permission_modification($iSurveyID){
-        /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
-         * Número de lineas: 7
-         * Primero se obtiene el id del usuario logueado.
-         * Luego se verifica si el usuario logueado es super administrador.
-         * Luego se consulta por el estado de la solicitud y si puede modificar o no la estructura de la encuesta 
-         * luego se verifica si puede editar la estructura de la encuesta. es decir, si no existe en la tabla de governanza o si su estado es requiere ajustes podrá modificar.
-         * por ultimo se verifica que el usuario no pueda modificar y que no sea super admin para 
-         * redireccionarlo a la misma encuesta.
-         * -------------------------------------------------------------------------------------
-         */
-        $loginID = Yii::app()->session['loginID'];
-        $issuperadmin = (Permission::model()->hasGlobalPermission('superadmin', 'read', $loginID));
-        $result = $this->_canmodify_and_request_state($iSurveyID);
-        $canmodify = isset($result['canmodify']) ? $result['canmodify'] : null; 
-        if(isset($canmodify,$issuperadmin) && !$canmodify && !$issuperadmin){
-            $this->getController()->redirect(array("admin/survey/sa/view/surveyid/$iSurveyID"));
-            die();
-        }
-    }
-
-    /**
-     * Verifica que el usuario logueado sea super administrador y a la vez dueño de la encuesta pasada por parámetro.
-     * @author Andrés David Montoya Aguirre - CSNT - 15/04/2016
-     * @param  int  $iSurveyID Identificador único de la encuesta.
-     * @return boolean            Retorna true si es super admin y a la vez dueño de la encuesta, de lo contrario, retorna false.
-     */
-    protected function _is_superadmin_and_owner($iSurveyID){
-        $loginID = Yii::app()->session['loginID'];
-        $survey = Survey::model()->findByPk($iSurveyID);
-        if(!is_null($survey)){
-            return $loginID == $survey->owner_id;
-        }
-        return false;
     }
 
 }
