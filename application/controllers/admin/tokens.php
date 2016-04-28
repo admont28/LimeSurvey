@@ -909,36 +909,26 @@ class tokens extends Survey_Common_Action
          * -------------------------------------------------------------------------------------
          * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 22/04/2016
          * Número de lineas: 31
-         * No se permite eliminar los encuestados si no es super administrador, si es super admin no puede borrar un encuestado si tiene una respuesta asociada.
+         * No se permite eliminar encuestados si ya tienen respuestas asociadas.
          * -------------------------------------------------------------------------------------
          */
-        $iSurveyID = sanitize_int($iSurveyID);
-        $loginID = Yii::app()->session['loginID'];
-        $issuperadmin = (Permission::model()->hasGlobalPermission('superadmin', 'read', $loginID));
-        if(!$issuperadmin){
-            Yii::app()->setFlashMessage("Error - No se puede eliminar los encuestados.","error");
-            $this->getController()->redirect($this->getController()->createUrl("admin/tokens/sa/browse/surveyid/{$iSurveyID}"));
-            die();
-        }
-        else {
-            $sTokenIDs = Yii::app()->request->getPost('tid');
-            $aTokenIds = explode(',', $sTokenIDs); //Make the tokenids string into an array
-            // DEBO CONSULTAR LA TABLA DE RESPUESTAS A LA ENCUESTA, NO LA TABLA DE TOKENS
-            $survey_table = '{{survey_' . $iSurveyID . '}}';
-            $token_table = '{{tokens_' . $iSurveyID . '}}';
-            $bSurveyExists = tableExists($survey_table);
-            $bTokenExists = tableExists($token_table);
-            if($bSurveyExists && $bTokenExists){
-                foreach ($aTokenIds as $key => $value) {
-                    $query_token = "SELECT token FROM ". $token_table ." WHERE tid = '".$value."'";
-                    $result_query_token = Yii::app()->db->createCommand($query_token)->queryAll();
-                    foreach ($result_query_token as $keytoken => $valuetoken) {
-                        $query = "SELECT token FROM ". $survey_table ." WHERE token = '".$valuetoken['token']."'";
-                        $survey_token = Yii::app()->db->createCommand($query)->queryAll();
-                        if (!is_null($survey_token) && !empty($survey_token)) {
-                            echo "No se puede eliminar un encuestado si está asociado a una respuesta.";
-                            die();
-                        }
+        $sTokenIDs = Yii::app()->request->getPost('tid');
+        $aTokenIds = explode(',', $sTokenIDs); //Make the tokenids string into an array
+        // DEBO CONSULTAR LA TABLA DE RESPUESTAS A LA ENCUESTA, NO LA TABLA DE TOKENS
+        $survey_table = '{{survey_' . $iSurveyID . '}}';
+        $token_table = '{{tokens_' . $iSurveyID . '}}';
+        $bSurveyExists = tableExists($survey_table);
+        $bTokenExists = tableExists($token_table);
+        if($bSurveyExists && $bTokenExists){
+            foreach ($aTokenIds as $key => $value) {
+                $query_token = "SELECT token FROM ". $token_table ." WHERE tid = '".$value."'";
+                $result_query_token = Yii::app()->db->createCommand($query_token)->queryAll();
+                foreach ($result_query_token as $keytoken => $valuetoken) {
+                    $query = "SELECT token FROM ". $survey_table ." WHERE token = '".$valuetoken['token']."'";
+                    $survey_token = Yii::app()->db->createCommand($query)->queryAll();
+                    if (!is_null($survey_token) && !empty($survey_token)) {
+                        echo "No se puede eliminar un encuestado si está asociado a una respuesta.";
+                        die();
                     }
                 }
             }
