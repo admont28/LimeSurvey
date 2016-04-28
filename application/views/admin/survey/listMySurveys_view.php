@@ -1,6 +1,6 @@
 <?php
 /**
-* This file render the list of surveys
+* This file render the list of my surveys
 * It use the Survey model search method to build the data provider.
 * 
 * @var $model  obj    the QuestionGroup model
