@@ -197,34 +197,6 @@
                 </div>
             </div>
         </div>
-        <?php if(isset($issuperadminandowner) && !$issuperadminandowner): ?>
-            <!-- Campo de gobernanza -->
-            <div class="row">
-                <div class="col-sm-3 col-sm-offset-3">
-                    <div class="row">
-                        <div class='form-group'>
-                            <label class='control-label col-sm-6' for='request_response'>Respuesta a la solicitud:</label>
-                            <div class='col-sm-6'>
-                                <textarea rows="4" cols="50" name="request_response" placeholder="Responde a la solicitud del dueño de la encuesta, si no responde se creará una respuesta por defecto"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Campo de gobernanza -->
-            <div class="row">
-                <div class="col-sm-3 col-sm-offset-3">
-                    <div class="row">
-                        <div class='form-group'>
-                            <label class='control-label col-sm-6' for='owner'>Autor:</label>
-                            <div class='col-sm-6'>
-                                <input type="text" name="country" value="<?php echo $owner[0]['full_name']; ?>" readonly required>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        <?php endif; ?>
         
         <div class='row'>
 

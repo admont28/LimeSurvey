@@ -32,7 +32,7 @@
                     <li class="panel panel-default dropdownstyle" id="questionexplorer-group-container">
 
 
-                        <?php if (!$bSurveyIsActive && ($canmodify || $issuperadmin) ): ?>
+                        <?php if (!$bSurveyIsActive): ?>
                         <div class="row ">
                             <div class="col-sm-8" >
                                 <!-- add group -->
@@ -59,7 +59,7 @@
                                     </a>
                                 </div>
 
-                                <?php if (!$bSurveyIsActive && ($canmodify || $issuperadmin) ): ?>
+                                <?php if (!$bSurveyIsActive): ?>
                                     <div class="col-sm-3" id="questions-container-<?php echo $aGroup->gid; ?>">
                                         <!-- add question to this group -->
                                         <a  data-toggle="tooltip" data-placement="top"  title="<?php eT('Add a question to this group');?>" class="" href="<?php echo $this->createUrl("/admin/questions/sa/newquestion/surveyid/$iSurveyId/gid/$aGroup->gid"); ?>">
@@ -69,7 +69,7 @@
                                 <?php else: ?>
                                     <div class="col-sm-3" id="questions-container-<?php echo $aGroup->gid; ?>">
                                         <!-- add question to this group -->
-                                            <a title="<?php eT("You can't add questions while the survey is active.");?> o no tienes permiso para hacer esto" class='disabled' href="#" data-toggle="tooltip" data-placement="bottom">
+                                            <a title="<?php eT("You can't add questions while the survey is active.");?>" class='disabled' href="#" data-toggle="tooltip" data-placement="bottom">
                                                 <span class="glyphicon glyphicon-plus-sign"></span>
                                             </a>
                                     </div>

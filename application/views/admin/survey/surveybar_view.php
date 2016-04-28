@@ -12,7 +12,7 @@
 
             <!-- Add a new group -->
             <?php if(isset($surveybar['buttons']['newgroup'])):?>
-                <?php if ($activated == "Y" || (!$canmodify && !$issuperadmin) ): ?>
+                <?php if ($activated == "Y"): ?>
                     <span class="btntooltip" data-toggle="tooltip" data-placement="bottom" title="<?php eT("Esta encuesta esta actualmente activa o usted no tiene permisos para hacer esto"); ?>" style="display: inline-block" data-toggle="tooltip" data-placement="bottom" title="<?php eT('Survey cannot be activated. Either you have no permission or there are no questions.'); ?>">
                         <button type="button" class="btn btn-default btntooltip" disabled="disabled">
                             <span class="icon-add"></span>
@@ -34,7 +34,7 @@
 
             <!-- Add a new question -->
             <?php if(isset($surveybar['buttons']['newquestion'])):?>
-                <?php if ($activated == "Y" || (!$canmodify && !$issuperadmin) ): ?>
+                <?php if ($activated == "Y"): ?>
                     <span class="btntooltip" data-toggle="tooltip" data-placement="bottom" title="<?php eT("Esta encuesta está actualmente activa o usted no tiene permisos para hacer esto"); ?>" style="display: inline-block" data-toggle="tooltip" data-placement="bottom" title="<?php eT('Survey cannot be activated. Either you have no permission or there are no questions.'); ?>">
                         <button type="button" class="btn btn-default btntooltip" disabled="disabled">
                             <span class="icon-add"></span>
@@ -67,69 +67,16 @@
 
                 <!-- survey activation -->
                 <?php if(!$activated): ?>
-
-                    <!-- solicitar activación -->
-                    <?php if($canrequest): ?>
-                        <span class="btntooltip" style="display: inline-block" data-toggle="tooltip" data-placement="bottom" title="<?php eT('Solicitar al super administrador la revisión y activación de la encuesta'); ?>">
-                            <a class="btn btn-success" href="<?php echo $this->createUrl("admin/survey/sa/request/surveyid/$surveyid"); ?>" role="button">
-                                <?php eT("Solicitar activación"); ?>
-                            </a>
-                        </span>
-                    <?php elseif(!$issuperadmin && !$canactivate): ?>
-                        <span class="btntooltip" style="display: inline-block" data-toggle="tooltip" data-placement="bottom" title="No puede solicitar la activación o bien porque ya la ha solicitado antes, no posee permismos o porque su encuesta no posee preguntas">
-                            <button type="button" class="btn btn-warning btntooltip" disabled="disabled">
-                                Solicitar Activación
-                            </button>
-                        </span>
-                    <?php endif; ?>
                     
                     <!-- activate -->
                     <?php if($canactivate): ?>
+                        <a class="btn btn-success" href="<?php echo $this->createUrl("admin/survey/sa/activate/surveyid/$surveyid"); ?>" role="button">
+                            <?php eT("Activate this survey"); ?>
+                        </a>
 
-                        <?php if(isset($issuperadminandowner) && $issuperadminandowner): ?>
-                            <span class="btntooltip" style="display: inline-block" data-toggle="tooltip" data-placement="bottom" title="<?php eT('Activar la encuesta'); ?>">
-                                <a href="<?php echo $this->createUrl("admin/survey/sa/activate/surveyid/$surveyid"); ?>" class="btn btn-success">
-                                    <span class="glyphicon glyphicon-ok" ></span>
-                                    <?php eT("Activar esta encuesta");?>
-                                </a>
-                            </span>
-                        <?php else: ?>
-                            <div class="btn-group hidden-xs">
-
-                                <!-- Main button dropdown -->
-                                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <span class="glyphicon glyphicon-th" ></span>
-                                     <?php eT('Acciones sobre la encuesta');?> <span class="caret"></span>
-                                </button>
-
-                                <!-- dropdown -->
-                                <ul class="dropdown-menu">
-                                    <li>
-                                        <a href="<?php echo $this->createUrl("admin/survey/sa/activate/surveyid/$surveyid"); ?>">
-                                            <span class="glyphicon glyphicon-ok" ></span>
-                                            <?php eT("Activar esta encuesta");?>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="<?php echo $this->createUrl("admin/survey/sa/requiresadjustments/surveyid/$surveyid"); ?>">
-                                            <span class="glyphicon glyphicon-cog" ></span>
-                                            <?php eT("La encuesta requiere ajustes");?>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a href="<?php echo $this->createUrl("admin/survey/sa/rejected/surveyid/$surveyid"); ?>">
-                                            <span class="glyphicon glyphicon-remove" ></span>
-                                            <?php eT("Rechazar esta encuesta");?>
-                                        </a>
-                                    </li>
-                                      
-                                </ul>
-                            </div>
-                        <?php endif; ?>
-
-                    <!-- can't activate and is superadmin -->
-                    <?php elseif($issuperadmin): ?>
-                        <span class="btntooltip" style="display: inline-block" data-toggle="tooltip" data-placement="bottom" title="La encuesta no podrá ser activada. O bien no tiene suficientes privilegios para hacerlo, la encuesta aún no tiene preguntas o no se ha solicitado la activación.">
+                    <!-- can't activate -->
+                    <?php else : ?>
+                        <span class="btntooltip" style="display: inline-block" data-toggle="tooltip" data-placement="bottom" title="<?php eT('Survey cannot be activated. Either you have no permission or there are no questions.'); ?>">
                             <button type="button" class="btn btn-warning btntooltip" disabled="disabled">
                                 <?php eT("Activar esta encuesta"); ?>
                             </button>
@@ -156,24 +103,12 @@
                     <?php endif; ?>
 
                     <!-- Stop survey -->
-                    <?php if($candeactivate): ?>
+                    <?php if($canactivate): ?>
                         <a class="btn btn-danger btntooltip" href="<?php echo $this->createUrl("admin/survey/sa/deactivate/surveyid/$surveyid"); ?>" role="button">
                             <?php eT("Stop this survey"); ?>
                         </a>
-                    <?php else :?>
-                        <span class="btntooltip" style="display: inline-block" data-toggle="tooltip" data-placement="bottom" title="La encuesta ha sido activada por el super administrador">
-                            <button type="button" class="btn btn-success btntooltip" disabled="disabled">
-                                Encuesta Activada
-                            </button>
-                        </span>
-                    <?php endif; ?>
                 <?php endif; ?>
 
-                <span class="btntooltip" style="display: inline-block" data-toggle="tooltip" data-placement="bottom" title="<?php eT('Ver el historial de solicitudes de esta encuesta'); ?>">
-                            <a class="btn btn-default" href="<?php echo $this->createUrl("admin/survey/sa/listrequestshistory/surveyid/$surveyid"); ?>" role="button">
-                                <?php eT("Historial de solicitudes"); ?>
-                            </a>
-                    </span>
                 <!-- Preview/Execute survey -->
                 <?php if($activated || $surveycontent) : ?>
 
@@ -599,7 +534,7 @@
                 <!-- Teacher Evaluation Export -->
                 <a class="btn btn-default" href="<?php echo Yii::App()->createUrl('admin/statistics/sa/exportteacherevaluation/surveyid/'.$surveyid);?>" role="button">
                     <span class="icon-display_export"></span>
-                    Exportar evaluación docente
+                    Exportar evaluación de desempeño
                 </a>
                 <?php if($permission):?>
                     <!-- List Groups -->
@@ -620,7 +555,7 @@
 
             <?php endif;?>
             <?php if(isset($surveybar['importquestion'])):?>
-                <a class="btn btn-default" href="<?php echo Yii::App()->createUrl('admin/questions/sa/importview/surveyid/'.$surveyid);?>" role="button">
+                <a class="btn btn-default" href="<?php echo Yii::App()->createUrl('admin/questions/sa/importview/groupid/'.$groupid.'/surveyid/'.$surveyid);?>" role="button">
                     <span class="icon-import"></span>
                     <?php eT('Import a question'); ?>
                 </a>
@@ -636,34 +571,6 @@
 
         <!-- right action buttons -->
         <div class=" col-md-4 text-right">
-            <?php if(isset($request_state)): ?>
-                <!-- Estado de la solicitud de activación de la encuesta -->
-                <span class="btntooltip" style="display: inline-block" data-toggle="tooltip" data-placement="bottom" title="
-                    <?php if($request_state == 'pendiente') echo 'El estado de la solicitud de la encuesta se encuetra pendiente de revisión';
-                    elseif($request_state == 'requiere ajustes') echo 'Debe realizar los ajustes orientados por el super administrador y volver a solicitar la revisión y activación';
-                    elseif($request_state == 'rechazada') echo 'El estado de la solicitud de la encuesta se encuentra rechazada, revisa el historial de la solicitud para más información';
-                    elseif($request_state == 'aprobada') echo 'La encuesta ha sido revisada y activada por el super administrador';
-                    else echo 'btn-default'; ?>" id="request_state">
-                    
-                    <div class="btn 
-                    <?php if($request_state == 'pendiente') echo 'btn-primary-bootstrap';
-                    elseif($request_state == 'requiere ajustes') echo 'btn-warning';
-                    elseif($request_state == 'rechazada') echo 'btn-danger';
-                    elseif($request_state == 'aprobada') echo 'btn-success';
-                    else echo 'btn-default'; ?>" id="request_state">
-                        <span class="glyphicon glyphicon-asterisk"></span>
-                        Estado: <?php echo $request_state;?>
-                    </div>
-                </span>
-            <?php else: ?>
-                <span class="btntooltip" style="display: inline-block" data-toggle="tooltip" data-placement="bottom" title="No se ha solicitado activación" id="request_state">
-                    
-                    <div class="btn btn-default" id="request_state">
-                        <span class="glyphicon glyphicon-asterisk"></span>
-                        Estado: SIN SOLICITUD
-                    </div>
-                </span>
-            <?php endif;?>
             <?php if(isset($surveybar['savebutton']['form'])):?>
 
                 <!-- Save -->

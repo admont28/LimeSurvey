@@ -15,8 +15,8 @@
             <?php if(isset($questiongroupbar['buttons']['view'])):?>
                 <!-- Buttons -->
 
-                <span class="btntooltip" data-toggle="tooltip" data-placement="bottom" title="<?php if ($surveyIsActive || (!$canmodify && !$issuperadmin) ) { echo eT("You can't add questions while the survey is active."); } ?>" >
-                   <a class="btn btn-default <?php if ($surveyIsActive || (!$canmodify && !$issuperadmin) ) { echo "disabled"; } ?>" href="<?php if ($surveyIsActive || (!$canmodify && !$issuperadmin) ) { echo '#'; } else { echo $this->createUrl('admin/questions/sa/newquestion/surveyid/'.$surveyid.'/gid/'.$gid); } ?>" role="button">
+                <span class="btntooltip" data-toggle="tooltip" data-placement="bottom" title="<?php if ($surveyIsActive) { echo eT("You can't add questions while the survey is active."); } ?>" >
+                   <a class="btn btn-default <?php if ($surveyIsActive) { echo "disabled"; } ?>" href="<?php echo $this->createUrl('admin/questions/sa/newquestion/surveyid/'.$surveyid.'/gid/'.$gid); ?>" role="button">
                        <span class="icon-add"></span>
                        <?php eT("Add new question to group");?>
                    </a>
@@ -53,19 +53,10 @@
 
                 <!-- Edit button -->
                 <?php if(Permission::model()->hasSurveyPermission($surveyid,'surveycontent','update')): ?>
-                    <?php if(!$canmodify && !$issuperadmin): ?>
-                      <span class="btntooltip" data-toggle="tooltip" data-placement="bottom" title="No tienes permiso para hacer esto" >
-                        <a class="btn btn-default disabled" href="#" role="button">
-                          <span class="icon-edit"></span>
-                          <?php eT("Edit current question group");?>
-                        </a>
-                      </span>
-                    <?php else: ?>
                       <a class="btn btn-default" href="<?php echo $this->createUrl('admin/questiongroups/sa/edit/surveyid/'.$surveyid.'/gid/'.$gid); ?>" role="button">
                           <span class="icon-edit"></span>
                           <?php eT("Edit current question group");?>
                       </a>
-                    <?php endif; ?>
                 <?php endif; ?>
 
                 <!-- Check survey logic -->
@@ -80,14 +71,7 @@
 
                     <!-- Delete -->
                     <?php if( ($sumcount4 == 0 && $activated != "Y") || $activated != "Y" ):?>
-                        <?php if(!$canmodify && !$issuperadmin): ?>
-                          <span class="btntooltip" data-toggle="tooltip" data-placement="bottom" title="No tienes permiso para hacer esto" >
-                             <a class="btn btn-default disabled" role="button">
-                                  <span class="glyphicon glyphicon-trash"></span>
-                                  <?php eT("Delete current question group"); ?>
-                              </a>
-                         </span>
-                        <?php else:?>
+
                           <!-- has question -->
                           <?php if(is_null($condarray)):?>
 
@@ -104,7 +88,6 @@
                                   <?php eT("Delete current question group"); ?>
                               </a>
                           <?php endif; ?>
-                        <?php endif; ?>
                     <?php else:?>
 
                         <!-- Activated -->

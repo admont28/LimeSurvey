@@ -62,11 +62,6 @@
 
             <!-- Configuration menu -->
             <?php $this->renderPartial( "/admin/super/_configuration_menu", $dataForConfigMenu ); ?>
-            <li class="dropdown-split-left">
-                <a style="" href="<?php echo $this->createUrl("admin/survey/sa/listrequests"); ?>">
-                    <?php eT("Listar solicitudes");?>
-                </a>
-            </li>
 
             <!-- Surveys menus -->
             <li class="dropdown-split-left">
@@ -136,7 +131,6 @@
                     <li>
                         <a href="https://drive.google.com/a/uniquindio.edu.co/folderview?id=0B6izFhsgbJgaamt0ZElXNWZFeGM&usp=sharing" target="_blank">Manuales de usuario</a>
                     </li>
-
 
                     <li class="divider"></li>
 

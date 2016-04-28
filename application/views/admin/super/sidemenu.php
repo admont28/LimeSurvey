@@ -103,9 +103,7 @@
                                         'sidemenu' => $sidemenu,
                                         'aGroups' => $aGroups,
                                         'iSurveyId' => $surveyid,
-                                        'bSurveyIsActive' => $bSurveyIsActive,
-                                        'canmodify' => $canmodify,
-                                        'issuperadmin' => $issuperadmin
+                                        'bSurveyIsActive' => $bSurveyIsActive
                                     )); ?>
 
                                     <?php if($permission):?>
@@ -129,11 +127,11 @@
 
                                     <!-- Organize questions -->
                                     <?php if($surveycontent):?>
-                                        <?php if ($activated || (!$canmodify && !$issuperadmin) ):?>
+                                        <?php if ($activated):?>
                                             <li class="disabled">
                                                 <a href='#'>
                                                     <span class="icon-organize"></span>
-                                                    <?php eT("Question group/question organizer disabled"); ?> - <?php eT("This survey is currently active."); ?> - o no tienes permiso para hacer esto
+                                                    <?php eT("Question group/question organizer disabled"); ?> - <?php eT("This survey is currently active."); ?>
                                                 </a>
                                             </li>
                                         <?php else: ?>
@@ -152,12 +150,12 @@
 
                     <!-- Token -->
                     <?php if($tokenmanagement):?>
-                            <li id="tokensidemenu" class="toWhite  <?php if( isset($sidemenu["token_menu"]) ) echo 'active'; ?> ">
-                                <a href="<?php echo $this->createUrl("admin/tokens/sa/index/surveyid/$surveyid"); ?>">
-                                    <span class="glyphicon glyphicon-user"></span>
-                                    <?php eT("Token management");?>
-                                </a>
-                            </li>
+                        <li id="tokensidemenu" class="toWhite  <?php if( isset($sidemenu["token_menu"]) ) echo 'active'; ?> ">
+                            <a href="<?php echo $this->createUrl("admin/tokens/sa/index/surveyid/$surveyid"); ?>">
+                                <span class="glyphicon glyphicon-user"></span>
+                                <?php eT("Token management");?>
+                            </a>
+                        </li>
                     <?php endif; ?>
 
                     <!-- Survey List -->
