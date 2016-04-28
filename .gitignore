@@ -26,3 +26,4 @@
 application/config/_config.php
 *.un~
 /sftp-config.json
+/images/*
