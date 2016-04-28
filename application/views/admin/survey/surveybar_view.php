@@ -107,8 +107,9 @@
                         <a class="btn btn-danger btntooltip" href="<?php echo $this->createUrl("admin/survey/sa/deactivate/surveyid/$surveyid"); ?>" role="button">
                             <?php eT("Stop this survey"); ?>
                         </a>
+                    <?php endif; ?>
                 <?php endif; ?>
-
+                
                 <!-- Preview/Execute survey -->
                 <?php if($activated || $surveycontent) : ?>
 
