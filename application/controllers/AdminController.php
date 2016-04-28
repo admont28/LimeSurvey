@@ -359,7 +359,7 @@ class AdminController extends LSYii_Controller
              * Número de líneas: 1
              * ----------------------------------------------------------------------------------------------
              */
-            define('PRESENTATION', gT('Esta es la interfaz de administración GESEN-UQ. Comience a construir su encuesta de aquí.'));
+            define('PRESENTATION', gT('Esta es la interfaz de administración GESEN-UQ. Comience a construir su encuesta aquí.'));
         }
 
         if ($return)
