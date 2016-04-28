@@ -481,17 +481,15 @@ class dataentry extends Survey_Common_Action
         /*
          * -------------------------------------------------------------------------------------
          * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
-         * Número de lineas: 7
-         * No se permite editar las respuestas si no es super administrador, así que se redirecciona inmediatamente.
+         * Número de lineas: 3
+         * NADIE puede editar las respuestas de los encuestados, se comenta el código original
+         * para conservar la acción.
          * -------------------------------------------------------------------------------------
          */
-        $loginID = Yii::app()->session['loginID'];
-        $issuperadmin = (Permission::model()->hasGlobalPermission('superadmin', 'read', $loginID));
-        if(!$issuperadmin){
-            Yii::app()->setFlashMessage("Error - No se puede editar las respuestas de los encuestados.","error");
-            $this->getController()->redirect($this->getController()->createUrl("admin/responses/sa/browse/surveyid/{$surveyid}"));
-            die();
-        }
+        Yii::app()->setFlashMessage("Error - No se puede editar las respuestas de los encuestados.","error");
+        $this->getController()->redirect($this->getController()->createUrl("admin/responses/sa/browse/surveyid/{$surveyid}"));
+        die();
+        /*
         if ($language == '') {
             $language = Survey::model()->findByPk($surveyid)->language;
         }
@@ -1360,7 +1358,7 @@ class dataentry extends Survey_Common_Action
             $aData['menu']['close'] =  true;
             //$aData['menu']['savebutton'] = 'frmeditgroup';
             $this->_renderWrappedTemplate('dataentry', $aViewUrls, $aData);
-        }
+        }*/
     }
 
     /**
