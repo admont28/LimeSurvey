@@ -931,17 +931,15 @@ class responses extends Survey_Common_Action
         /*
          * -------------------------------------------------------------------------------------
          * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 13/04/2016
-         * Número de lineas: 7
-         * No se permite editar las respuestas si no es super administrador, así que se redirecciona inmediatamente.
+         * Número de lineas: 3
+         * NADIE puede eliminar las respuestas de los encuestados, se comenta el código original
+         * para conservar la acción.
          * -------------------------------------------------------------------------------------
          */
-        $loginID = Yii::app()->session['loginID'];
-        $issuperadmin = (Permission::model()->hasGlobalPermission('superadmin', 'read', $loginID));
-        if(!$issuperadmin){
-            Yii::app()->setFlashMessage("Error - No puede eliminar las respuestas de los encuestados.","error");
-            $this->getController()->redirect($this->getController()->createUrl("admin/responses/sa/browse/surveyid/{$iSurveyId}"));
-            die();
-        }
+        Yii::app()->setFlashMessage("Error - No puede eliminar las respuestas de los encuestados.","error");
+        $this->getController()->redirect($this->getController()->createUrl("admin/responses/sa/browse/surveyid/{$iSurveyId}"));
+        die();
+        /*
         if(Permission::model()->hasSurveyPermission($iSurveyId,'responses','delete'))
         {
             $aResponseId=explode(",",$sResponseId); // deleteByPk lust work with array, but seems don't work ? Maybe before delete broke this ?column_model_txt
@@ -953,7 +951,7 @@ class responses extends Survey_Common_Action
                     SurveyTimingDynamic::model($iSurveyId)->deleteByPk($iResponseId);
                 }
             }
-        }
+        }*/
     }
 
     /**
