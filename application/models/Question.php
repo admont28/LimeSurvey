@@ -769,26 +769,6 @@
 
     public function getbuttons()
     {   
-        /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 10/04/2016
-         * Número de lineas: 10
-         * Primero se obtiene el id del usuario logueado.
-         * Luego se verifica si el usuario logueado es super administrador 
-         * Por último se verifica si puede editar la estructura de la encuesta. es decir, si no existe en la tabla de governanza o si su estado es requiere ajustes podrá modificar.
-         * -------------------------------------------------------------------------------------
-         */
-        $loginID = Yii::app()->session['loginID'];
-        $issuperadmin = (Permission::model()->hasGlobalPermission('superadmin', 'read', $loginID));
-        $governancesurvey = GovernanceSurvey::model()->findByPk($this->sid);
-        $canmodify = false;
-        if (is_null($governancesurvey)) {
-            $canmodify = true;
-        }
-        else if($governancesurvey->gosu_requeststate=="requiere ajustes"){
-            $canmodify = true;
-        }
-
         $url = Yii::app()->createUrl("/admin/questions/sa/view/surveyid/");
         $url .= '/'.$this->sid.'/gid/'.$this->gid.'/qid/'.$this->qid;
         $button = '<a class="btn btn-default" href="'.$url.'" role="button"><span class="glyphicon glyphicon-pencil" ></span></a>';
@@ -799,37 +779,17 @@
         $editurl = Yii::app()->createUrl("admin/questions/sa/editquestion/surveyid/$this->sid/gid/$this->gid/qid/$this->qid");
 
         $button = '<a class="btn btn-default open-preview"  data-toggle="tooltip" title="'.gT("Question preview").'"  aria-data-url="'.$previewUrl.'" aria-data-sid="'.$this->sid.'" aria-data-gid="'.$this->gid.'" aria-data-qid="'.$this->qid.'" aria-data-language="'.$this->language.'" href="# role="button" ><span class="glyphicon glyphicon-eye-open"  ></span></a> ';
-        /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 10/04/2016
-         * Número de lineas: 1
-         * Si puede modificar o es super administrador, muestro el botón con acciones,
-         * De lo contrario no se muestra ningún botón
-         * -------------------------------------------------------------------------------------
-         */
-        if($canmodify || $issuperadmin){
-            $button .= '<a class="btn btn-default"  data-toggle="tooltip" title="'.gT("Edit question").'" href="'.$editurl.'" role="button"><span class="glyphicon glyphicon-pencil" ></span></a>';
-        }
+        $button .= '<a class="btn btn-default"  data-toggle="tooltip" title="'.gT("Edit question").'" href="'.$editurl.'" role="button"><span class="glyphicon glyphicon-pencil" ></span></a>';
         $button .= '<a class="btn btn-default"  data-toggle="tooltip" title="'.gT("Question summary").'" href="'.$url.'" role="button"><span class="glyphicon glyphicon-list-alt" ></span></a>';
 
         $oSurvey = Survey::model()->findByPk($this->sid);
 
         if($oSurvey->active != "Y" && Permission::model()->hasSurveyPermission($this->sid,'surveycontent','delete' ))
         {       
-            /*
-             * -------------------------------------------------------------------------------------
-             * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 10/04/2016
-             * Número de lineas: 1
-             * Si puede modificar o es super administrador, muestro el botón con acciones,
-             * De lo contrario no se muestra ningún botón
-             * -------------------------------------------------------------------------------------
-             */
-            if($canmodify || $issuperadmin){
-                $button .= '<a class="btn btn-default"  data-toggle="tooltip" title="'.gT("Delete").'" href="#" role="button"
+            $button .= '<a class="btn btn-default"  data-toggle="tooltip" title="'.gT("Delete").'" href="#" role="button"
                             onclick="if (confirm(\' '.gT("Deleting  will also delete any answer options and subquestions it includes. Are you sure you want to continue?","js").' \' )){ '.convertGETtoPOST(Yii::app()->createUrl("admin/questions/sa/delete/surveyid/$this->sid/gid/$this->gid/qid/$this->qid")).'} ">
                                 <span class="text-danger glyphicon glyphicon-trash"></span>
                             </a>';
-            }
         }
 
 

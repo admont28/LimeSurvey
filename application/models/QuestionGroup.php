@@ -208,25 +208,6 @@ class QuestionGroup extends LSActiveRecord
 
     public function getbuttons()
     {
-         /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 10/04/2016
-         * Número de lineas: 10
-         * Primero se obtiene el id del usuario logueado.
-         * Luego se verifica si el usuario logueado es super administrador 
-         * Por último se verifica si puede editar la estructura de la encuesta. es decir, si no existe en la tabla de governanza o si su estado es requiere ajustes podrá modificar.
-         * -------------------------------------------------------------------------------------
-         */
-        $loginID = Yii::app()->session['loginID'];
-        $issuperadmin = (Permission::model()->hasGlobalPermission('superadmin', 'read', $loginID));
-        $governancesurvey = GovernanceSurvey::model()->findByPk($this->sid);
-        $canmodify = false;
-        if (is_null($governancesurvey)) {
-            $canmodify = true;
-        }
-        else if($governancesurvey->gosu_requeststate=="requiere ajustes"){
-            $canmodify = true;
-        }
         // Find out if the survey is active to disable add-button
         $oSurvey=Survey::model()->findByPk($this->sid);
         $surveyIsActive = $oSurvey->active !== 'N';
@@ -234,22 +215,13 @@ class QuestionGroup extends LSActiveRecord
 
         // Add question to this group
         $url = Yii::app()->createUrl("admin/questions/sa/newquestion/surveyid/$this->sid/gid/$this->gid");
-        /*
-         * -------------------------------------------------------------------------------------
-         * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 10/04/2016
-         * Número de lineas: 1
-         * Si puede modificar o es super administrador, muestro el botón con acciones,
-         * De lo contrario no se muestra ningún botón
-         * -------------------------------------------------------------------------------------
-         */
-        if($canmodify || $issuperadmin){
-            $button = '<a class="btn btn-default list-btn ' . ($surveyIsActive ? 'disabled' : '') . ' "  data-toggle="tooltip"  data-placement="left" title="'.gT('Add new question to group').'" href="'.$url.'" role="button"><span class="glyphicon glyphicon-plus-sign " ></span></a>';
+        $button = '<a class="btn btn-default list-btn ' . ($surveyIsActive ? 'disabled' : '') . ' "  data-toggle="tooltip"  data-placement="left" title="'.gT('Add new question to group').'" href="'.$url.'" role="button"><span class="glyphicon glyphicon-plus-sign " ></span></a>';
 
-            // Group edition
-            // Edit
-            $url = Yii::app()->createUrl("admin/questiongroups/sa/edit/surveyid/$this->sid/gid/$this->gid");
-            $button .= '  <a class="btn btn-default  list-btn" href="'.$url.'" role="button" data-toggle="tooltip" title="'.gT('Edit group').'"><span class="glyphicon glyphicon-pencil " ></span></a>';
-        }
+        // Group edition
+        // Edit
+        $url = Yii::app()->createUrl("admin/questiongroups/sa/edit/surveyid/$this->sid/gid/$this->gid");
+        $button .= '  <a class="btn btn-default  list-btn" href="'.$url.'" role="button" data-toggle="tooltip" title="'.gT('Edit group').'"><span class="glyphicon glyphicon-pencil " ></span></a>';
+        
         // View summary
         $url = Yii::app()->createUrl("/admin/questiongroups/sa/view/surveyid/");
         $url .= '/'.$this->sid.'/gid/'.$this->gid;
@@ -258,35 +230,25 @@ class QuestionGroup extends LSActiveRecord
         $iQuestionsInGroup = Question::model()->countByAttributes(array('sid' => $this->sid, 'gid' => $this->gid, 'language' => $baselang));
 
         // Delete
-        if($oSurvey->active != "Y" && Permission::model()->hasSurveyPermission($this->sid,'surveycontent','delete' ) && $iQuestionsInGroup > 0 )
+        if($oSurvey->active != "Y" && Permission::model()->hasSurveyPermission($this->sid,'surveycontent','delete' ) && $iQuestionsInGroup > 0)
         {
-            /*
-             * -------------------------------------------------------------------------------------
-             * ADICIÓN DE CÓDIGO - ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 10/04/2016
-             * Número de lineas: 1
-             * Si puede modificar o es super administrador, muestro el botón con acciones,
-             * De lo contrario no se muestra ningún botón
-             * -------------------------------------------------------------------------------------
-             */
-            if($canmodify || $issuperadmin){
-                $condarray = getGroupDepsForConditions($this->sid, "all", $this->gid, "by-targgid");
-                if(is_null($condarray))
-                {
-                    $confirm = 'if (confirm(\''.gT("Deleting this group will also delete any questions and answers it contains. Are you sure you want to continue?","js").'\')) { window.open(\''.Yii::app()->createUrl("admin/questiongroups/sa/delete/surveyid/$this->sid/gid/$this->gid").'\',\'_top\'); };';
-                    $button .= '<a class="btn btn-default"  data-toggle="tooltip" title="'.gT("Delete").'" href="#" role="button"
-                                onclick="'.$confirm.'">
-                                    <span class="text-danger glyphicon glyphicon-trash"></span>
-                                </a>';
-                }
-                else
-                {
-                    $alert = 'alert(\''.gT("Impossible to delete this group because there is at least one question having a condition on its content","js").'\'); return false;';
-                    $button .= '<a class="btn btn-default"  data-toggle="tooltip" title="'.gT("Delete").'" href="#" role="button"
-                                onclick="'.$alert.'">
-                                    <span class="text-danger glyphicon glyphicon-trash"></span>
-                                </a>';
-                }
+            $condarray = getGroupDepsForConditions($this->sid, "all", $this->gid, "by-targgid");
+            if(is_null($condarray))
+            {
+                $confirm = 'if (confirm(\''.gT("Deleting this group will also delete any questions and answers it contains. Are you sure you want to continue?","js").'\')) { window.open(\''.Yii::app()->createUrl("admin/questiongroups/sa/delete/surveyid/$this->sid/gid/$this->gid").'\',\'_top\'); };';
+                $button .= '<a class="btn btn-default"  data-toggle="tooltip" title="'.gT("Delete").'" href="#" role="button"
+                            onclick="'.$confirm.'">
+                                <span class="text-danger glyphicon glyphicon-trash"></span>
+                            </a>';
             }
+            else
+            {
+                $alert = 'alert(\''.gT("Impossible to delete this group because there is at least one question having a condition on its content","js").'\'); return false;';
+                $button .= '<a class="btn btn-default"  data-toggle="tooltip" title="'.gT("Delete").'" href="#" role="button"
+                            onclick="'.$alert.'">
+                                <span class="text-danger glyphicon glyphicon-trash"></span>
+                            </a>';
+            }  
         }
 
         return $button;
