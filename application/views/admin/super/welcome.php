@@ -34,26 +34,15 @@
             </div>
         </div>
     <?php endif;?>
+    
+    <!-- Message when first start -->
+    <?php if($countSurveyList==0  && Permission::model()->hasGlobalPermission('surveys','create') ):?>
+        <script type="text/javascript">
+            $(window).load(function(){
+                $('#welcomeModal').modal('show');
+            });
+        </script>  
 
-    <!-- Politices Modal -->
-    <?php if(isset($show_politices) && $show_politices): ?>
-        <!-- Politicas de GESEN-UQ -->
-        <div class="modal fade" id="politicesModal">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                      <h4 class="modal-title">Políticas de GESEN-UQ</h4>
-                    </div>
-                    <div class="modal-body">
-                        <p>Políticas</p>
-                    </div>
-                    <div class="modal-footer">
-                      <button type="button" onclick="abrirPasos()" class="btn btn-success" data-dismiss="modal">Entendido</button>
-                    </div>
-                </div><!-- /.modal-content -->
-            </div><!-- /.modal-dialog -->
-        </div><!-- /.modal -->
         <div class="modal fade" id="welcomeModal">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -78,17 +67,6 @@
                 </div><!-- /.modal-content -->
             </div><!-- /.modal-dialog -->
         </div><!-- /.modal -->
-        <script type="text/javascript">
-            $(window).load(function () {
-                $('#politicesModal').modal('show');
-                
-            });
-            function abrirPasos(){
-                    console.log('Abriendo pasos');
-                    $('#welcomeModal').modal('show');
-                    console.log('Abrí pasos');
-            }
-        </script>
     <?php endif;?>
 
     <!-- Last visited survey/question -->
