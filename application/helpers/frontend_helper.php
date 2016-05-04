@@ -971,10 +971,10 @@ function buildsurveysession($surveyid,$preview=false)
             echo templatereplace(file_get_contents($sTemplateViewPath."survey.pstpl"),array(),$redata,'frontend_helper[1596]');
             // ->renderPartial('entertoken_view');
             if (isset($secerror)) echo "<span class='error'>".$secerror."</span><br />";
-            echo '<div id="wrapper"><p id="tokenmessage">'.gT("This is a controlled survey. You need a valid token to participate.")."<br />";
+            echo '<div id="wrapper" class="text-center"><p id="tokenmessage">'.gT("This is a controlled survey. You need a valid token to participate.")."<br />";
             echo gT("If you have been issued a token, please enter it in the box below and click continue.")."</p>
             <script type='text/javascript'>var focus_element='#token';</script>"
-            .CHtml::form(array("/survey/index","sid"=>$surveyid), 'post', array('id'=>'tokenform', 'class'=>'form-horizontal col-sm-4', 'autocomplete'=>'off'))."
+            .CHtml::form(array("/survey/index","sid"=>$surveyid), 'post', array('id'=>'tokenform', 'class'=>'form-horizontal col-sm-5 col-sm-offset-3', 'autocomplete'=>'off'))."
 
             <div class='form-group'>";?>
             <label class="col-sm-6 control-label" for='token'><?php eT("Token:");?></label>
@@ -1016,8 +1016,8 @@ function buildsurveysession($surveyid,$preview=false)
             }
             echo "
             <div class='form-group'>
-                <div class='col-sm-3'>
-                    <input class='submit btn btn-default button' type='submit' value='".gT("Continue")."' />
+                <div class='col-sm-6 col-sm-offset-6'>
+                    <input class='submit btn btn-default button col-sm-12' type='submit' value='".gT("Continue")."' />
                 </div>
             </div>
 
