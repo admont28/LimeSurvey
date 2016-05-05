@@ -25,7 +25,7 @@
                     <br/>
                     <?php eT("Using the chart type selector you can force the graph type for all selected questions.");?>
                     <br/>
-                    La gráfica de pastel para el formato PDF solo está disponible para ciertos tipos de pregunta, se mostrará la gráfica por defecto para estas preguntas.
+                    La gráfica de pastel para el formato PDF solo está disponible para ciertos tipos de pregunta.
                 </div>
             </div>
 
