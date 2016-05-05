@@ -19,11 +19,13 @@
             </div>
 
             <div class="form-group col-sm-12">
-                <div class="col-sm-offset-1 alert alert-info alert-dismissible" role="alert">
+                <div class="col-sm-offset-1 alert alert-warning alert-dismissible" role="alert">
                     <button type="button" class="close limebutton" data-dismiss="alert" aria-label="Close"><span>×</span></button>
                     <?php eT("Each question has its own graph type defined in its advanced settings.");?>
                     <br/>
                     <?php eT("Using the chart type selector you can force the graph type for all selected questions.");?>
+                    <br/>
+                    La gráfica de pastel para el formato PDF solo está disponible para ciertos tipos de pregunta, se mostrará la gráfica por defecto para estas preguntas.
                 </div>
             </div>
 
