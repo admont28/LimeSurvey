@@ -138,3 +138,53 @@
         </div>
     </div>
 </div>
+<script type="text/javascript">
+    $(document).ready(function (){
+
+        $("input[name='outputtype']").change(function (){
+            var value = $(this).attr('id');
+            $('#charttype').prop('disabled', false);
+            if(value == "outputtypepdf"){
+                $('#charttype').empty();
+                $('#charttype').append($('<option>', {
+                    value: 'default',
+                    text: 'Tal y como está definido en la configuración de la pregunta'
+                }));
+                $('#charttype').append($('<option>', {
+                    value: 0,
+                    text: 'Gráfica de barras'
+                }));
+                $('#charttype').append($('<option>', {
+                    value: 1,
+                    text: 'Gráfica de pastel'
+                }));
+            }
+            else if(value == "outputtypexls") {
+                $('#charttype').prop('disabled', true);
+            }
+            else{
+                
+                $('#charttype').append($('<option>', {
+                    value: 2,
+                    text: 'Gráfica radial'
+                }));
+                $('#charttype').append($('<option>', {
+                    value: 3,
+                    text: 'Gráfica de líneas'
+                }));
+                $('#charttype').append($('<option>', {
+                    value: 4,
+                    text: 'Gráfica polar'
+                }));
+                $('#charttype').append($('<option>', {
+                    value: 5,
+                    text: 'Gráfica sectorial'
+                }));
+            }
+        });
+        /*$('#charttype').change(function (){
+            var value = $('#charttype').val();
+            if
+        });*/
+    });
+</script>

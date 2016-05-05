@@ -3472,8 +3472,10 @@ class statistics_helper {
             $bAllowPieChart = ($outputs['qtype'] != "M" && $outputs['qtype'] != "P");
             $bAllowMap = (isset($aattr["location_mapservice"]) && $aattr["location_mapservice"] == "1");
             $bShowMap = ($bAllowMap && $aattr["statistics_showmap"] == "1");
-            $bShowPieChart = ($bAllowPieChart && (isset($aattr["statistics_graphtype"]) && $aattr["statistics_graphtype"] == "1"));
-
+            //$bShowPieChart = ($bAllowPieChart && (isset($aattr["statistics_graphtype"]) && $aattr["statistics_graphtype"] == "1"));
+            // ANDRÉS DAVID MONTOYA AGUIRRE - 04/05/2016
+            //$bShowPieChart = (isset($_POST['charttype']) && $_POST['charttype'] == '1');
+            $bShowPieChart = ($bAllowPieChart && (isset($_POST['charttype']) && $_POST['charttype'] == '1'));
             $astatdata[$rt] = array(
                 'id' => $rt,
                 'sg' => $bShowGraph,
