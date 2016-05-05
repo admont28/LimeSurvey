@@ -35,6 +35,10 @@ Thank you to everyone who helped with this new release!
 CHANGE LOG
 ------------------------------------------------------
 
+CSNT - Cambios de 2.50+ (build 160428) a 2.50+ (build 160505) Mayo 5, 2016
+- Se corrige el error en forzar gráficas al momento de exportar estadísticas, para el formato PDF solo es posible forzar 2 gráficos, y solo se realiza para ciertos tipos de preguntas si se fuerza la gráfica a pastel, las preguntas que no soporten la gráfica de pastel serán mostradas en gráfica de barras.
+- Se adiciona un mensaje alusivo al cambio de arriba.
+
 CSNT - Cambios de 2.50+ (build 160427) a 2.50+ (build 160428) Abril 28, 2016
 - Se corrige el mensaje de bienvenida que se muestra después de iniciar sesión.
 
