@@ -47,7 +47,15 @@ function doFileUpload(){
                 previewblock += "<div class='form-group'><div class='col-xs-4'></div><div class='input-container'><a class='btn btn-danger fa fa-trash' onclick='deletefile(\""+fieldname+"\", "+i+")'>"+uploadLang.deleteFile+"</a></div></div>";
                 previewblock += "</fieldset></div>";
             }
-
+            else
+            {
+                // ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 06/05/2016
+                // Permitir eliminar el documento cargado
+                previewblock +="<div class='file-info'><fieldset>";
+                previewblock += "<div class='form-group'><div class='col-xs-4'></div><div class='input-container'><a class='btn btn-danger fa fa-trash' onclick='deletefile(\""+fieldname+"\", "+count+")'>"+uploadLang.deleteFile+"</a></div></div>";
+                previewblock += "</fieldset></div>";
+            }
+            
             previewblock += "<input type='hidden' id='"+fieldname+"_size_"    +i+"' value="+json[i-1].size+" />"+
                     "<input type='hidden' id='"+fieldname+"_name_"    +i+"' value="+json[i-1].name+" />"+
                     "<input type='hidden' id='"+fieldname+"_file_index_"+i+"' value="+i+" />"+
@@ -171,7 +179,15 @@ function doFileUpload(){
                     previewblock += "<div class='form-group'><div class='col-xs-4'></div><div class='input-container'><a class='btn btn-danger fa fa-trash' onclick='deletefile(\""+fieldname+"\", "+count+")'>"+uploadLang.deleteFile+"</a></div></div>";
                     previewblock += "</fieldset></div>";
                 }
-
+                else{
+                    // ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 06/05/2016
+                    // Permitir eliminar el documento cargado
+                    previewblock +="<div class='file-info'><fieldset>";
+                    previewblock += "<div class='form-group'><div class='col-xs-4'></div><div class='input-container'><a class='btn btn-danger fa fa-trash' onclick='deletefile(\""+fieldname+"\", "+count+")'>"+uploadLang.deleteFile+"</a></div></div>";
+                    previewblock += "</fieldset></div>";
+            
+                }
+                
                 previewblock += "<input type='hidden' id='"+fieldname+"_size_"+count+"' value="+metadata.size+" />"+
                                 "<input type='hidden' id='"+fieldname+"_file_index_"+count+"' value="+metadata.file_index+" />"+
                                 "<input type='hidden' id='"+fieldname+"_name_"+count+"' value="+metadata.name+" />"+
