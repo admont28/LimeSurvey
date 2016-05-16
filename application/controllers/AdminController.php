@@ -218,6 +218,8 @@ class AdminController extends LSYii_Controller
         'tokens'           => 'tokens',
         'translate'        => 'translate',
         'update'           => 'update',
+        // Se registra la nueva acción de asuntos docentes, que se encuentra ubicado en el directorio admin
+        'teacherissues'    => 'teacherissues'
         );
     }
 
