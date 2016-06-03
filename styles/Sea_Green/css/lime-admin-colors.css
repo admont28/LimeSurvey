@@ -1989,7 +1989,17 @@ input[type="text"], input[type="password"], .ui-autocomplete-input, textarea, .u
 .question-item {
   border: 1px solid #35363f; }
 
-.placeholder {
-  background-color: #84b39a; }
+/*
+ * CÓDIGO ORIGINAL
+ *.placeholder {
+  background-color: #84b39a; }*/
+/* Cambiado al siguiente bloque para efectos de contar con compatibilidad con la librería
+ * SweetAlert2 al momento de mostrar un mensaje de tipo success (como estaba en el código original
+ * no se mostraba el check verde)
+ * ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 02/06/2016
+ */
+input .placeholder {
+  background-color: #84b39a; 
+}
 
 /*# sourceMappingURL=lime-admin-colors.css.map */

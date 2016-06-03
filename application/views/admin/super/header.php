@@ -16,6 +16,10 @@
         App()->getClientScript()->registerPackage('jqueryui');
         App()->getClientScript()->registerPackage('jquery-cookie');
 
+        // Sweet alert2 -> https://github.com/limonte/sweetalert2 - ANDRES DAVID MONTOYA AGUIRRE - CSNT - 01/06/2016
+        App()->getClientScript()->registerScriptFile( Yii::app()->getBaseUrl(true).'/scripts/sweetalert2.min.js');
+        App()->getClientScript()->registerCssFile( Yii::app()->getBaseUrl(true).'/styles-public/sweetalert2.min.css' );
+        // FIN SWEETALERT
         // Font awesome
         if(!YII_DEBUG)
         {

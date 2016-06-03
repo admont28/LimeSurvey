@@ -1628,7 +1628,17 @@ $color_aqua_forest_approx: adjust-color($base-color, $hue: 4deg, $saturation: -2
 $color_paradiso_approx:adjust-color($base-color, $lightness: 5%); ;
 $color_norway_approx: adjust-color($base-color, $hue: 0deg, $saturation: -28%, $lightness: 31%);
 */
-.placeholder {
+/*
+ * CÓDIGO ORIGINAL
+ *.placeholder {
+  padding: 1em;
+  margin: 1em 0 1em 0; }*/
+/* Cambiado al siguiente bloque para efectos de contar con compatibilidad con la librería
+ * SweetAlert2 al momento de mostrar un mensaje de tipo success (como estaba en el código original
+ * no se mostraba el check verde)
+ * ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 02/06/2016
+ */
+input .placeholder {
   padding: 1em;
   margin: 1em 0 1em 0; }
 
