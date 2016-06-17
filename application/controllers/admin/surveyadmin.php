@@ -943,10 +943,13 @@ class SurveyAdmin extends Survey_Common_Action
                         $deletedsurvey->desu_justification = $justification;
                         $deletedsurvey->delsur_user_fk = $owner;
                         $deletedsurvey->desu_user_fk = $loginID;
-                        $deletedsurvey->save();
 
+                        
+                        
                         $aData['issuperadmin'] = Permission::model()->hasGlobalPermission('superadmin','read');
+
                         $this->_deleteSurvey($iSurveyID);
+                        $deletedsurvey->save();
                         Yii::app()->session['flashmessage'] = gT("Survey deleted.");
                         $this->getController()->redirect(array("admin/index"));
                     }

@@ -79,7 +79,7 @@
 									</td>
 									<?php foreach ($informacionadicional as $key => $value): ?>
 										<td data-col='<?php echo $value->inad_pk; ?>'>
-											<input class='checkboxbtn checkfi bloquear' type='checkbox' id='preg_' name='preg_' disabled='disabled'  <?php if(isset($fila['seleccionado'.$value->inad_pk])) echo "checked='checked'" ?> />
+											<input class='checkboxbtn checkfi bloquear' type='checkbox' id='preg_' name='preg_' disabled='disabled'  <?php if(isset($fila['seleccionado'.$value->inad_pk]) && $fila['seleccionado'.$value->inad_pk] == true) echo "checked='checked'" ?> />
 										</td>
 									<?php endforeach;?>
 								</tr>

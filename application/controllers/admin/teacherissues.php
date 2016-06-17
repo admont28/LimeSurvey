@@ -22,6 +22,10 @@
 */
 class TeacherIssues extends Survey_Common_Action {
 
+    const CODIFICACION_CARACTERES = 'AL32UTF8';
+
+    private $dbOracleConn;
+
 	/**
     * Inicializa el controlador llamando al construct del padre.
     *
@@ -32,6 +36,11 @@ class TeacherIssues extends Survey_Common_Action {
     */
     public function __construct($controller, $id){
         parent::__construct($controller, $id);
+        $this->dbOracleConn = oci_connect(self::USUARIO, self::PASSWORD, self::CADENA_CONEXION,self::CODIFICACION_CARACTERES);
+        if(!@($this->dbOracleConn)){
+            echo "Falló la conexión a la base de datos.";
+            $this->dbOracleConn = null;
+        }
     }
 
     /**
@@ -51,11 +60,11 @@ class TeacherIssues extends Survey_Common_Action {
      * @return void Muestra la página para la configuración de la plantilla, a su vez, muestra todas las plantillas que se han creado.
      */
     public function templateconfiguration(){
-        //Yii::trace(CVarDumper::dumpAsString(Yii::app()->request->getPost()), 'vardump');
         $aData = array();
-        if(isset($_POST['nombre_plantilla']) && trim($_POST['nombre_plantilla']) != ""){
+        if(isset($_POST['nombre_plantilla'], $_POST['tipo_labor']) && trim($_POST['nombre_plantilla']) != "" && trim($_POST['tipo_labor']) != "" ){
             $plantillaEvaluacion = new PlantillaEvaluacion;
             $plantillaEvaluacion->plev_nombre = $_POST['nombre_plantilla'];
+            $plantillaEvaluacion->plev_tipolabor = $_POST['tipo_labor'];
             $plantillaEvaluacion->save();
             Yii::app()->setFlashMessage(gT("La plantilla: ".$_POST['nombre_plantilla']." ha sido guardada exitosamente."));
         }
@@ -196,7 +205,7 @@ class TeacherIssues extends Survey_Common_Action {
                             }
                             // Si no ocurren errores se hace el commit a la bd
                             $transaction->commit();
-                            echo json_encode(array("state" => "success", "fuin_pk" => $idFuenteInformacion));
+                            echo json_encode(array("state" => "success", "fuin_pk" => $idFuenteInformacion, "Tr" => "Commit hecho."));
                             return;
                         }else{
                             $transaction->rollBack();
@@ -241,41 +250,559 @@ class TeacherIssues extends Survey_Common_Action {
     }
 
     /**
-     * NO SE ENCUENTRA EN FUNCIONAMIENTO, AÚN NO HA SIDO PROBADA
+     * Función que permite ver y buscar las evaluaciones de desempeño creadas. 
      * @access public
      * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 12/05/2016
-     * @return [type] [description]
+     * @return void Muestra la página donde se listan las evaluaciones de desempeño.
      */
-    public function performanceEvaluation(){
-    	$aData = array();
-        Yii::trace(CVarDumper::dumpAsString($_POST), 'vardump');
-        // Creo la conexión con oracle
-        $oci = Yii::app()->dbOracle;
-        // Creo el comando con la consulta para obtener el PEGE_ID Y EL TIDG_ID
-        $row = Yii::app()->dbOracle->createCommand()
-            ->select('TIDG_ID, TIDG_DESCRIPCION')
-            ->from('GENERAL.TIPODOCUMENTOGENERAL T')
-            ->queryAll();
-        $tipo_documentos = array();
-        foreach ($row as $llave => $valor) {
-            $tipo_documentos[$valor['TIDG_ID']] = $valor['TIDG_DESCRIPCION'];
+    public function performanceevaluation(){
+        $aData = array();
+        $aData['model'] = $model = new EvaluacionDesempeno('search');
+       
+        if (isset($_GET['EvaluacionDesempeno']['searched_value']))
+        {
+            $model->searched_value = $_GET['EvaluacionDesempeno']['searched_value'];
         }
-        $aData['tipo_documentos'] = $tipo_documentos;
+            // Set number of page
+        if (isset($_GET['pageSize']))
+        {
+            Yii::app()->user->setState('pageSize',(int)$_GET['pageSize']);
+        }
+        
         $this->_renderWrappedTemplate('teacherissues', 'performanceEvaluation_view', $aData);
     }
 
     /**
-     * Función que permite eliminar una configuración de la plantilla pasada por parametro.
+     * Función que permite agregar una evaluación de desemepeño.
+     * @access public
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 01/06/2016
+     * @return void Muestra la página para agregar una nueva evaluación de desempeño, además si vienen datos por post sobre una evaluación de desempeño se encarga de adicionarla en la base de datos realizando las respectivas clonaciones de encuestas.
+     */
+    public function addperformanceevaluation(){
+        if(isset($_POST, $_POST['evaluacion']) ){
+            header('Content-Type: application/json');
+            $evaluacion = $_POST['evaluacion'];
+            $evaluacion = json_decode($evaluacion);
+            $evaluacion = $evaluacion->evaluacion;
+            $plantilla_evaluado = PlantillaEvaluacion::model()->findByPk($evaluacion->idplantilla);
+            if(is_null($plantilla_evaluado)){
+                // Error en la seleccion de la plantilla
+                echo json_encode(array('state' => 'error', 'message' => 'Debe seleccionar una plantilla válida.'));
+            }else{
+                $facultad_evaluado = $evaluacion->idfacultad;
+                $programa_evaluado = $evaluacion->idprograma;
+                $tipo_identificacion = $evaluacion->tipo_identificacion;
+                $identificacion_evaluado = $evaluacion->identificacion;
+                $nombre_evaluado = $evaluacion->nombre;
+                $dependencia_evaluado = null;
+                // Si la plantilla es de docente o director de programa debe existir la selección de la facultad y el programa
+                if( ($plantilla_evaluado->plev_tipolabor == 1 || $plantilla_evaluado->plev_tipolabor == 3 ) && !is_null($facultad_evaluado) && !is_null($programa_evaluado)){
+                    $dependencia_evaluado = $programa_evaluado;
+                }
+                // Si la plantilla es de decano debe existir la selección de la facultad
+                elseif ($plantilla_evaluado->plev_tipolabor == 4 && !is_null($facultad_evaluado)) {
+                    $dependencia_evaluado = $facultad_evaluado;
+                }
+                // Si la plantilla es de vicerrector académico no necesitamos facultad ni nada
+                elseif ($plantilla_evaluado->plev_tipolabor == 5) {
+                    $dependencia_evaluado = 246; // Vicerrectoria académica
+                }
+                if(!is_null($dependencia_evaluado)){
+                    if(!is_null($tipo_identificacion) && !is_null($identificacion_evaluado) && !is_null($nombre_evaluado) && trim($tipo_identificacion) != "" && trim($identificacion_evaluado) != "" && trim($nombre_evaluado) != "" ){
+                        $fuentesinformacion = $evaluacion->fuentesinformacion;
+                        if(sizeof($fuentesinformacion) > 0){
+                            $suma = 0;
+                            $error_suma = false;
+                            foreach ($fuentesinformacion as $fi) {
+                                if($fi->pesofi < 0 ){
+                                    echo json_encode(array('state' => 'error', 'message' => 'Los pesos de las fuentes de información no deben ser inferiores a 0'));
+                                    die();
+                                }
+                                $suma+= $fi->pesofi;
+                                if($suma > 100){
+                                    // Error, suma de los pesos mayor que el 100%
+                                    $error_suma = true;
+                                    break;
+                                }
+                            }
+                            if(!$error_suma && $suma == 100){
+                                $error_en_bd = false;
+                                $evaluacionDesempeno = new EvaluacionDesempeno;
+                                $evaluacionDesempeno->evde_fechaevaluacion = date('Y-m-d');
+                                $evaluacionDesempeno->evde_identificacionevaluado = $identificacion_evaluado;
+                                $evaluacionDesempeno->evde_dependenciaevaluado = $dependencia_evaluado;
+                                $evaluacionDesempenoId = null;
+                                $idEncuestas = array();
+                                $idGrupos = array();
+                                $idEvaluacionesFuentes = array();
+                                if($evaluacionDesempeno->save(true)){
+                                    $evaluacionDesempenoId = $evaluacionDesempeno->getPrimaryKey();
+                                    foreach ($fuentesinformacion as $fi) {
+                                        if(!is_null($fi->idfi) ){
+                                            $fuenteInfo = FuenteInformacion::model()->findByPk($fi->idfi);
+                                            $aGrupos = $fi->gruposfi;
+                                            if($fi->pesofi > 0){
+                                                if(sizeof($aGrupos) > 0){
+                                                    foreach ($aGrupos as $key => $grupofi) {
+                                                        $aData = $this->copy_survey($fuenteInfo->surv_fuin_fk, "EVALUACIÓN DE DESEMPEÑO - FUENTE: ".$fuenteInfo->fuin_nombre." - EVALUADO: ".$nombre_evaluado." - MATERIA: ".$grupofi->mate_nombre." - GRUPO: ".$grupofi->grup_nombre);
+
+                                                        if(isset($aData['bFailed']) && $aData['bFailed'] == true){
+                                                            $error_en_bd = true;
+                                                            break;
+                                                        }else{
+                                                            $aImportResults = $aData['aImportResults'];
+                                                            $surveyid = $aImportResults['newsid'];
+                                                            $idEncuestas[] = $surveyid;
+                                                            $grupo = new Grupo;
+                                                            $grupo->grup_nombre = $grupofi->mate_nombre." - ".$grupofi->grup_nombre;
+                                                            $grupo->grup_grupoid = $grupofi->grup_id;
+                                                            $grupo->surv_grup_fk = $surveyid;
+                                                            if($grupo->save(true)){
+                                                                $grupoid = $grupo->getPrimaryKey();
+                                                                $idGrupos[] = $grupoid;
+                                                                $evaldesefueninfo = new EvaluacionDesempenoFuenteInformacion;
+                                                                $evaldesefueninfo->evde_edfi_fk = $evaluacionDesempenoId;
+                                                                $evaldesefueninfo->fuin_edfi_fk = $fuenteInfo->fuin_pk;
+                                                                $evaldesefueninfo->grup_edfi_fk = $grupoid;
+                                                                $evaldesefueninfo->edfi_peso = $fi->pesofi;
+                                                                if($evaldesefueninfo->save(true)){
+                                                                    $idEvaluacionesFuentes[] = $evaldesefueninfo->getPrimaryKey();
+                                                                }else{
+                                                                    $error_en_bd = true;
+                                                                }
+                                                            }else{
+                                                                $error_en_bd = true;
+                                                            }
+                                                        }
+                                                    } // Cierre foreach de gruposfi
+                                                }else{
+                                                    // No vienen grupos de materias
+                                                    $aData = $this->copy_survey($fuenteInfo->surv_fuin_fk, "EVALUACIÓN DE DESEMPEÑO - FUENTE: ".$fuenteInfo->fuin_nombre." - EVALUADO: ".$nombre_evaluado);
+                                                    
+                                                    if(isset($aData['bFailed']) && $aData['bFailed'] == true){
+                                                        $error_en_bd = true;
+                                                        break;
+                                                    }else{
+                                                        $aImportResults = $aData['aImportResults'];
+                                                        $surveyid = $aImportResults['newsid'];
+                                                        $idEncuestas[] = $surveyid;
+                                                        $grupo = new Grupo;
+                                                        $nombre_grupo = $fuenteInfo->fuin_nombre." - ".$identificacion_evaluado;
+                                                        $grupo->grup_nombre = $nombre_grupo;
+                                                        $grupo->surv_grup_fk = $surveyid;
+                                                        if($grupo->save(true)){
+                                                            $grupoid = $grupo->getPrimaryKey();
+                                                            $idGrupos[] = $grupoid;
+                                                            $evaldesefueninfo = new EvaluacionDesempenoFuenteInformacion;
+                                                            $evaldesefueninfo->evde_edfi_fk = $evaluacionDesempenoId;
+                                                            $evaldesefueninfo->fuin_edfi_fk = $fuenteInfo->fuin_pk;
+                                                            $evaldesefueninfo->grup_edfi_fk = $grupoid;
+                                                            $evaldesefueninfo->edfi_peso = $fi->pesofi;
+                                                            if($evaldesefueninfo->save(true)){
+                                                                $idEvaluacionesFuentes[] = $evaldesefueninfo->getPrimaryKey();
+                                                            }else{
+                                                                $error_en_bd = true;
+                                                            }
+                                                        }else{
+                                                            $error_en_bd = true;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            // peso de fuente igual a 0
+                                            else if($fi->pesofi == 0){
+                                                $evaldesefueninfo = new EvaluacionDesempenoFuenteInformacion;
+                                                $evaldesefueninfo->evde_edfi_fk = $evaluacionDesempenoId;
+                                                $evaldesefueninfo->fuin_edfi_fk = $fuenteInfo->fuin_pk;
+                                                $evaldesefueninfo->grup_edfi_fk = 0;
+                                                $evaldesefueninfo->edfi_peso = $fi->pesofi;
+                                                if($evaldesefueninfo->save(true)){
+                                                    $idEvaluacionesFuentes[] = $evaldesefueninfo->getPrimaryKey();
+                                                }else{
+                                                    $error_en_bd = true;
+                                                }
+                                            }
+                                            
+                                        }
+                                    } // End foreach
+                                }else{
+                                    // Error al insertar la EvaluacionDesempeno
+                                    $error_en_bd = true;
+                                }
+                                if($error_en_bd){
+                                    if(!is_null($evaluacionDesempenoId)){
+                                        foreach ($idEvaluacionesFuentes as $key => $value) {
+                                            $evdefuin = EvaluacionDesempenoFuenteInformacion::model()->findByPk($value);
+                                            if(!is_null($evdefuin)){
+                                                $evdefuin->delete();
+                                                echo "Eliminada la evdefuin";
+                                            }
+                                        }
+                                        foreach ($idGrupos as $key => $value) {
+                                            $grupo = Grupo::model()->findByPk($value);
+                                            if(!is_null($grupo)){
+                                                $grupo->delete();
+                                                echo "eliminado el grupo";
+                                            }
+                                        }
+                                        foreach ($idEncuestas as $key => $value) {
+                                            $encuesta = Survey::model()->findByPk($value);
+                                            if(!is_null($encuesta)){
+                                                rmdirr(Yii::app()->getConfig('uploaddir') . '/surveys/' .$encuesta->sid);
+                                                $encuesta->delete();
+                                                echo "eliminada la encuesta";
+                                            }
+                                        }
+                                        $evde = EvaluacionDesempeno::model()->findByPk($evaluacionDesempenoId);
+                                        if(!is_null($evde)){
+                                            $evde->delete();
+                                        }
+                                    }
+                                }
+                                else{
+                                    echo json_encode(array('state' => 'success', 'message' => 'Se ha guardado la evaluación de desempeño con éxito.', 'url' => $this->getController()->createUrl("admin/teacherissues/sa/performanceevaluation")));
+                                }
+                            }else{
+                                echo json_encode(array('state' => 'error', 'message' => 'La suma de los pesos de las fuentes de información debe ser igual al 100%.'));
+                            }
+                        }else{
+                            // Error en las fuentes de información, no existe al menos 1
+                            echo json_encode(array('state' => 'error', 'message' => 'Debe existir al menos 1 fuente de información para guardar la evaluación de desempeño.'));
+                        }
+                    } else{
+                        // Error en el tipo de identificación o en la identificación
+                        echo json_encode(array('state' => 'error', 'message' => 'Tipo de identificación, número de identificación y nombre son requeridos.'));
+                    }
+                }else{
+                    echo json_encode(array('state' => 'error', 'message' => 'Todos los campos que estén habilitados para selección son requeridos.'));
+                }
+            }
+        }else{
+            $aData = array();
+            $command = Yii::app()->dbOracle->createCommand("call REPORTES.PR_REPORTES_TIPODOCUMENTO(P_RECORDSET)");
+            $sql = 'BEGIN REPORTES.PR_REPORTES_TIPODOCUMENTO(:tipo_documentos); END;';
+            $stmt = oci_parse($this->dbOracleConn, $sql);
+            // Crear un nuevo cursor 
+            $tipo_documentos = oci_new_cursor($this->dbOracleConn);
+            // Pasar el cursor a la consulta
+            oci_bind_by_name($stmt,":tipo_documentos",$tipo_documentos,-1,SQLT_RSET);
+            // Ejecutar la consulta
+            oci_execute($stmt);
+            // Ejecutar el cursor
+            oci_execute($tipo_documentos);
+            $documentos = array();
+            // Use oci_fetch_assoc para obtener los resultados en un arreglo asociativo.
+            while ($entry = oci_fetch_assoc($tipo_documentos)) {
+                $documentos[$entry['TIDG_ID']] = $entry['TIDG_DESCRIPCION'];
+            }
+            $facultades = array();
+            $facultades[''] = "Por favor seleccione...";
+            $sql = "SELECT DISTINCT UNID_ID, UNID_NOMBRE FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA ORDER BY UNID_NOMBRE";
+            $stmt = oci_parse($this->dbOracleConn, $sql);
+            oci_execute($stmt);
+            while ($entry = oci_fetch_assoc($stmt)) {
+                $facultades[$entry['UNID_ID']] = $entry['UNID_NOMBRE'];
+            }
+            oci_close($this->dbOracleConn);
+            $aData['plantillas'] = PlantillaEvaluacion::model()->findAll();
+            $aData['facultades'] = $facultades;
+            $aData['tipo_documentos'] = $documentos;
+            $this->_renderWrappedTemplate('teacherissues', 'addPerformanceEvaluation_view', $aData);
+        }
+    }
+
+    /**
+     * Función que permite editar una evaluación de desempeño.
+     * @access public
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 14/06/2016
+     * @return void Muestra la página de edición de evaluación de desempeño.
+     */
+    public function editperformanceevaluation($performanceevaluationid){
+        $evaluacionDesempeno = EvaluacionDesempeno::model()->findByPk($performanceevaluationid);
+        if(!is_null($evaluacionDesempeno)){
+            $aData = array();
+            $aData['evaluacionDesempeno'] = $evaluacionDesempeno;
+            $criteria = new CDbCriteria;
+            $criteria->addCondition("evde_edfi_fk = :evde_pk");
+            $criteria->params = array(':evde_pk' => $evaluacionDesempeno->evde_pk);
+            $edfi = EvaluacionDesempenoFuenteInformacion::model()->findAll($criteria);
+            foreach ($edfi as $row) {
+                $fuenteInformacion = array();
+                $fi = FuenteInformacion::model()->findByPk($row->fuin_edfi_fk);
+                if(!is_null($fi)){
+                    if(!isset($aData['plantilla'])){
+                        $plantilla = PlantillaEvaluacion::model()->findByPk($fi->plev_fuin_fk);
+                        $aData['plantilla'] = $plantilla;
+                        $sql = "";
+                        $nombre = "";
+                        if($plantilla->plev_tipolabor == 1 ){
+                            $sql = "SELECT PROGRAMA FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA WHERE PROG_ID = :ID_DEPENDENCIA";
+                            $nombre = "PROGRAMA";
+                        }
+                        else if($plantilla->plev_tipolabor == 3 ){
+                            $sql = "SELECT PROGRAMA FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA WHERE UNID_DIRPROGRAMA = :ID_DEPENDENCIA";
+                            $nombre = "PROGRAMA";
+                            
+                        }else if($plantilla->plev_tipolabor == 4){
+                            $sql = "SELECT UNID_NOMBRE FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA WHERE UNID_ID = :ID_DEPENDENCIA";
+                            $nombre = "UNID_NOMBRE";
+                           
+                        }
+                        else if($plantilla->plev_tipolabor == 5){
+                            $sql = "SELECT UNID_NOMBRE FROM ACADEMICO.UNIDAD WHERE UNID_ID = :ID_DEPENDENCIA";
+                            $nombre = "UNID_NOMBRE";
+                        }
+                        if($sql != "" && $nombre != ""){
+                            $dependencia_evaluado = $evaluacionDesempeno->evde_dependenciaevaluado;
+                            $stmt = oci_parse($this->dbOracleConn, $sql);
+                            oci_bind_by_name($stmt, ":ID_DEPENDENCIA", $dependencia_evaluado);
+                            oci_execute($stmt);
+                            while ($entry = oci_fetch_assoc($stmt)) {
+                                $aData['dependencia'] = $entry[$nombre];
+                            }
+                        }
+                    }
+                    
+                    $survey_model = Survey::model()->findByPk($fi->surv_fuin_fk);
+                    $surveyinfo = $survey_model->getSurveyinfo();
+                    $grupo_fi = Grupo::model()->findByPk($row->grup_edfi_fk);
+                    $fuenteInformacion['idfi'] = $fi->fuin_pk;
+                    $fuenteInformacion['nombre_fi'] = $fi->fuin_nombre;
+                    $fuenteInformacion['id_encuesta'] = $fi->surv_fuin_fk;
+                    $fuenteInformacion['nombre_encuesta'] = $surveyinfo['surveyls_title'];
+                    $fuenteInformacion['peso_fi'] = $row->edfi_peso;
+                    if(!is_null($grupo_fi)){
+                        $survey_model = Survey::model()->findByPk($grupo_fi->surv_grup_fk);
+                        $surveyinfo = $survey_model->getSurveyinfo();
+                        $fuenteInformacion['nombre_encuesta_clonada'] = $surveyinfo['surveyls_title'];
+                        $fuenteInformacion['id_encuesta_clonada'] = $grupo_fi->surv_grup_fk;
+                    }else{
+                        $fuenteInformacion['id_encuesta_clonada'] = "SIN ENCUESTA CLONADA";
+                    }
+                    $aData['fi'][] = $fuenteInformacion;
+                }
+            }
+            Yii::trace(CVarDumper::dumpAsString($aData), 'vardump');
+            $this->_renderWrappedTemplate('teacherissues', 'viewPerformanceEvaluation_view', $aData);
+        }else{
+            Yii::app()->setFlashMessage(gT("Identificador de evaluación de desempeño no válido."), "error");
+            $this->getController()->redirect(array("admin/teacherissues/sa/performanceevaluation"));
+            die();
+        }
+    }
+
+    /**
+     * Función que permite obtener los programas dad auna facultad y una plantilla, esta función es usada en la adición de nuevas evaluaciones de desempeño.
+     * @access public
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 07/06/2016
+     * @return void Imprime un objeto JSON con los programas de la facultad.
+     */
+    public function getprogramas(){
+        if(isset($_POST, $_POST['idfacultad'], $_POST['idplantilla']) && trim($_POST['idfacultad']) != "" && trim($_POST['idplantilla']) != ""){
+            $idfacultad = $_POST['idfacultad'];
+            $idplantilla = $_POST['idplantilla'];
+            $plantilla = PlantillaEvaluacion::model()->findByPk($idplantilla);
+            if(!is_null($plantilla)){
+                $sql = "SELECT DISTINCT PROGRAMA, UNID_DIRPROGRAMA, PROG_ID FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA WHERE UNID_ID = :UNID_ID ORDER BY PROGRAMA";
+                $stmt = oci_parse($this->dbOracleConn, $sql);
+                oci_bind_by_name($stmt, ":UNID_ID", $idfacultad);
+                oci_execute($stmt);
+                $programas = "<option value='' >Por favor seleccione...</option>";
+                // Si la plantilla es de Docente necesito el PROG_ID Y EL PROGRAMA  
+                if($plantilla->plev_tipolabor == 1){
+                    while ($entry = oci_fetch_assoc($stmt)) {
+                        $programas.="<option value='".$entry['PROG_ID']."' >".$entry['PROGRAMA']."</option>";
+                    }
+                }
+                // Si no es de Docente necesito el UNID_DIRPROGRAMA Y EL PROGRAMA
+                else{
+                    while ($entry = oci_fetch_assoc($stmt)) {
+                        $programas.="<option value='".$entry['UNID_DIRPROGRAMA']."' >".$entry['PROGRAMA']."</option>";
+                    }
+                }
+                echo json_encode(array("state" => "success", "html" => $programas));
+                die();
+            }
+        }
+        echo json_encode(array("state" => "error", "message" => "Facultad o plantilla seleccionada no válida."));
+    }
+
+    /**
+     * Función que permite obtener toda la información relacionada con una plantilla de evaluación de desempeño.
+     * @access public
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 07/06/2016
+     * @return void Imprime un objeto JSON con las fuentes de información y toda la información asociada a la plantilla.
+     */
+    public function gettemplateinformation(){
+        if(isset($_POST, $_POST['idplantilla']) && trim($_POST['idplantilla']) != ""){
+            $idplantilla = $_POST['idplantilla'];
+            $plantilla = PlantillaEvaluacion::model()->findByPk($idplantilla);
+            if(!is_null($plantilla)){
+                header('Content-Type: application/json');
+                $criteria = new CDbCriteria();
+                $criteria->addCondition("plev_fuin_fk = :plev_pk");
+                $criteria->order = "fuin_pk ASC";
+                $criteria->params = array(':plev_pk' => $plantilla->plev_pk);
+                // Consulto las fuentes de información de la plantilla
+                $fuentesinformacion = FuenteInformacion::model()->findAll($criteria);
+                $respuesta = array();
+                $i = 0;
+                $fuente_json = array();
+                foreach ($fuentesinformacion as $fi) {
+                    $fuente['fuin_pk'] = $fi->fuin_pk;
+                    $fuente['plev_fuin_fk'] = $fi->plev_fuin_fk;
+                    $survey_model = Survey::model()->findByPk($fi->surv_fuin_fk);
+                    $surveyinfo = $survey_model->getSurveyinfo();
+                    $survey = array();
+                    $survey['nombre'] = $surveyinfo['surveyls_title'];
+                    $survey['surv_fuin_fk'] = $surveyinfo['sid'];
+                    $fuente['survey'] = $survey;
+                    $fuente['fuin_nombre'] = $fi->fuin_nombre;
+                    $fuente['fuin_peso'] = $fi->fuin_peso;
+                    $fuente['fuin_permitegrupos'] = $fi->fuin_permitegrupos;
+                    $criteria = new CDbCriteria();
+                    $criteria->addCondition("fuin_inad_fk = :fuin_pk");
+                    $criteria->order = "inad_pk ASC";
+                    $criteria->params = array(':fuin_pk' => $fi->fuin_pk);
+                    $consulta_ia = InformacionAdicional::model()->findAll($criteria);
+                    $criteria = new CDbCriteria();
+                    $criteria->select = 'question, qid';  
+                    $criteria->condition = 'sid = :surveyid';
+                    $criteria->addCondition('parent_qid = 0');
+                    $criteria->params = array(':surveyid' => $fi->surv_fuin_fk);
+                    $criteria->order = 'gid, question_order ASC'; 
+                    $consulta_question = Question::model()->findAll($criteria);
+                    $p = array();
+                    foreach ($consulta_question as $q) {
+                        $p[$q->qid] = viewHelper::flatEllipsizeText($q->question,true,90,'[...]',0.5);
+                    }
+                    $fuente['preguntas'] = $p;
+
+                    foreach ($consulta_ia as $ia ) {
+                        $ia_json['inad_pk'] = $ia->inad_pk;
+                        $ia_json['fuin_inad_fk'] = $ia->fuin_inad_fk;
+                        $ia_json['inad_nombre'] = $ia->inad_nombre;
+                        $criteria = new CDbCriteria();
+                        $criteria->addCondition("inad_inap_fk = :inad_pk");
+                        $criteria->params = array(':inad_pk' => $ia->inad_pk);
+                        $consulta_iap = InformacionAdicionalPregunta::model()->findAll($criteria);
+                        $pregunta = array();
+                        foreach ($consulta_question as $q) {
+                            $pia = array();
+                            $pia['id'] = $q->qid;
+                            $pia['pregunta'] = viewHelper::flatEllipsizeText($q->question,true,90,'[...]',0.5);
+                            $encontrada = false;
+                            foreach ($consulta_iap as $iap) {
+                                if($q->qid == $iap->ques_inap_fk){
+                                    $pia['checked'] = 1;
+                                    $encontrada = true;
+                                    break;
+                                }
+                            }
+                            if(!$encontrada){
+                                $pia['checked'] = 0;
+                            }
+                            $pregunta[] = $pia;
+                        }
+                        $ia_json['preguntas'] = $pregunta;
+                        $fuente['ia'][] = $ia_json;
+                        $ia_json = array();
+                    }
+                    $fuente_json[$i] = $fuente;
+                    $fuente = array();
+                    $i++;
+                }
+                echo json_encode(array("state" => "success", "tipolabor" => $plantilla->plev_tipolabor, "fuentesinformacion" => $fuente_json));
+                die();
+            }    
+        }
+        echo json_encode(array("state" => "error", "message" => "Identificador de plantilla no válido"));  
+    }
+
+    /**
+     * Función que permite eliminar una configuración de la plantilla pasada por parametro, la función verifica que la plantilla no haya sido usada en una evaluación de desempeño creada para poderla eliminar.
      * @access public 
      * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 25/05/2016 
      * @param  int $templateid Identificador único de la plantilla de evaluación
      * @return void            Realiza la eliminación de la base de datos de la plantilla, redirige hacia la vista de las plantillas y envia un mensaje.
      */
     public function deleteconfigurationtemplate($templateid){
-        // TODO: verificar que la plantilla no haya sido usada en una aplicación de evaluación de desempeño, si ya ha sido usada no se podrá eliminar de la base de datos.
-        PlantillaEvaluacion::model()->deleteByPk($templateid);
-        Yii::app()->setFlashMessage(gT("La plantilla con id: ".$templateid." ha sido eliminada exitosamente."));
+        $criteria = new CDbCriteria;
+        $criteria->addCondition("plev_fuin_fk = :plev_pk");
+        $criteria->params = array(":plev_pk" => $templateid);
+        $fuentes = FuenteInformacion::model()->findAll($criteria);
+        $existente = false;
+        foreach ($fuentes as $fi) {
+            $criteria = new CDbCriteria;
+            $criteria->addCondition("fuin_edfi_fk = :fuin_pk");
+            $criteria->params = array(":fuin_pk" => $fi->fuin_pk);
+            $edfi = EvaluacionDesempenoFuenteInformacion::model()->findAll($criteria);
+            Yii::trace(CVarDumper::dumpAsString($edfi), 'vardump');
+            if(sizeof($edfi) > 0){
+                $existente = true;
+                break;
+            }
+        }
+        if(!$existente){
+            PlantillaEvaluacion::model()->deleteByPk($templateid);
+            Yii::app()->setFlashMessage(gT("La plantilla con id: ".$templateid." ha sido eliminada exitosamente."));
+        }else{
+            Yii::app()->setFlashMessage(gT("La plantilla con id: ".$templateid." no se ha podido eliminar porque se encuentra en uso en al menos 1 evaluación de desempeño."), "error");
+        }
         $this->getController()->redirect(array('admin/teacherissues/sa/templateconfiguration'));
+    }
+
+    /**
+     * Función que permite eliminar una evaluación de desempeño, la función verifica que la evaluación de desempeño no tenga encuestas activas con tabla de respuestas para poderla eliminar.
+     * @access public
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 17/06/2016
+     * @param  integer $performanceevaluationid Identificador único de la evaluación de desempeño.
+     * @return void                             Redirecciona a una vista y muestra un mensaje (error o success).
+     */
+    public function deleteperformanceevaluation($performanceevaluationid){
+        $evaluacionDesempeno = EvaluacionDesempeno::model()->findByPk($performanceevaluationid);
+        if(!is_null($evaluacionDesempeno)){
+            $criteria = new CDbCriteria;
+            $criteria->addCondition("evde_edfi_fk = :evde_pk");
+            $criteria->params = array(':evde_pk' => $evaluacionDesempeno->evde_pk);
+            $edfi = EvaluacionDesempenoFuenteInformacion::model()->findAll($criteria);
+            $encuesta_activa = false;
+            foreach ($edfi as $row) {
+                $grupo = Grupo::model()->findByPk($row->grup_edfi_fk);
+                if(!is_null($grupo)){
+                    $encuesta = $grupo->surv_grup_fk;
+                    if(tableExists('survey_'.$encuesta)){
+                        $encuesta_activa = true;
+                        break;
+                    }
+                }
+            }
+            if(!$encuesta_activa){
+                $transaction = Yii::app()->db->beginTransaction();
+                try
+                {   
+                    EvaluacionDesempenoFuenteInformacion::model()->deleteAll($criteria);
+                    foreach ($edfi as $row) {
+                        $grupo = Grupo::model()->findByPk($row->grup_edfi_fk);
+                        $grupo->delete();
+                        Survey::model()->deleteSurvey($grupo->surv_grup_fk);
+                    }
+                    $evaluacionDesempeno->delete();
+                    $transaction->commit();
+                    Yii::app()->setFlashMessage(gT("Se ha eliminado exitosamente la evaluación de desempeño."), "success");
+                    $this->getController()->redirect(array("admin/teacherissues/sa/performanceevaluation"));
+                }
+                catch(Exception $e){
+                    $transaction->rollback();
+                    Yii::app()->setFlashMessage(gT("Se ha producido un error inesperado al momento de eliminar la evaluación de desempeño, por favor inténtalo más tarde.".$e->getMessage()), "error");
+                    $this->getController()->redirect(array("admin/teacherissues/sa/performanceevaluation"));
+                }
+            }else{
+                Yii::app()->setFlashMessage(gT("No se puede eliminar la evaluación de desempeño porque existe al menos 1 encuesta activada."), "error");
+                $this->getController()->redirect(array("admin/teacherissues/sa/performanceevaluation"));
+                die();
+            }
+        }
     }
 
     /**
@@ -301,7 +828,7 @@ class TeacherIssues extends Survey_Common_Action {
             $criteria->condition = 'sid = :surveyid';
             $criteria->addCondition('parent_qid = 0');
             $criteria->params = array(':surveyid' => $fi->surv_fuin_fk);
-            $criteria->order = 'question_order,gid ASC'; 
+            $criteria->order = 'gid, question_order  ASC'; 
             // Consulto la encuesta asociada a la fuente de información
             $consulta_survey = Question::model()->findAll($criteria);
             $preguntas = array();
@@ -351,7 +878,7 @@ class TeacherIssues extends Survey_Common_Action {
             $criteria->condition = 'sid = :surveyid';
             $criteria->addCondition('parent_qid = 0');
             $criteria->params = array(':surveyid' => $surveyid);
-            $criteria->order = 'question_order,gid ASC'; 
+            $criteria->order = 'gid, question_order ASC'; 
             $post = Question::model()->findAll($criteria);
             foreach ($post as $question) {
                 $pregunta['pregunta'] = viewHelper::flatEllipsizeText($question->question,true,90,'[...]',0.5);
@@ -366,158 +893,192 @@ class TeacherIssues extends Survey_Common_Action {
     }
 
     /**
-     * NO SE ENCUENTRA EN FUNCIONAMIENTO, AÚN NO HA SIDO PROBADA
+     * Función que permite obtener la información de un evaluado desde academusoft, si la plantilla es para profesor se obtienen los grupos activos.
      * @access public
      * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 12/05/2016
-     * @param  [type] $tipoidentificacion [description]
-     * @param  [type] $identificacion     [description]
-     * @return [type]                     [description]
+     * @return void                     Imprime un objeto JSON con la información del evaluado.
      */
-    public function getajaxinformationevaluated($tipoidentificacion, $identificacion){
+    public function getajaxinformationevaluated(){
         header('Content-Type: application/json');
-        // Número de identifiación nulo
-        if(is_null($identificacion))
-            echo json_encode(array("state" => "error", "message" => "Número de identificación no válido"));
-        // Número de identifiación vacío
-        elseif (trim($identificacion) == "")
-            echo json_encode(array("state" => "error", "message" => "Número de identificación no válido"));
-        // Número de identifiación no vacío y no nulo, procedo a consultar
-        else{
-            // Creo la conexión con oracle 
-            $oci = Yii::app()->dbOracle;
-            // Creo el comando con la consulta para obtener el PEGE_ID Y EL TIDG_ID
-            $row = Yii::app()->dbOracle->createCommand()
-            ->select('PEGE_ID, TIDG_ID')
-            ->from('GENERAL.PERSONAGENERAL P')
-            ->where('P.PEGE_DOCUMENTOIDENTIDAD = :DOCUMENTOIDENTIDAD AND P.TIDG_ID = :TIDG_ID', array(':DOCUMENTOIDENTIDAD'=>$identificacion, ':TIDG_ID' => $tipoidentificacion))
-            ->queryAll();
-            // No existe ningún resultado
-            if(!$this->_verify_array($row)){
-                echo json_encode(array("state" => "error", "message" => "Número de documento no encontrado"));
-                return;
-            }else{
-              
-                $pege_id = $row[0]['PEGE_ID'];
-                $tigd_id = $row[0]['TIDG_ID'];
-                // Creo el comando con la consulta para obtener el nombre y el apellido
-                $row = Yii::app()->dbOracle->createCommand()
-                ->select('PENG_PRIMERNOMBRE, PENG_SEGUNDONOMBRE, PENG_PRIMERAPELLIDO, PENG_SEGUNDOAPELLIDO')
-                ->from('GENERAL.PERSONANATURALGENERAL P')
-                ->where('P.PEGE_ID = :PEGE_ID', array(':PEGE_ID'=>$pege_id))
-                ->queryAll();
-                if(!$this->_verify_array($row)){
-                    echo json_encode(array("state" => "error4"));
-                    return;
-                }else{
-                    $peng_primernombre      = $row[0]['PENG_PRIMERNOMBRE'];
-                    $peng_segundonombre     = $row[0]['PENG_SEGUNDONOMBRE'];
-                    $peng_primerapellido    = $row[0]['PENG_PRIMERAPELLIDO'];
-                    $peng_segundoapellido   = $row[0]['PENG_SEGUNDOAPELLIDO'];
-                    // Creo el comando con la consulta para obtener el tipo de identificación
-                    $row = Yii::app()->dbOracle->createCommand()
-                    ->select('TIDG_DESCRIPCION')
-                    ->from('GENERAL.TIPODOCUMENTOGENERAL T')
-                    ->where('T.TIDG_ID = :TIDG_ID', array(':TIDG_ID'=>$tigd_id))
-                    ->queryAll();
-                    if(!$this->_verify_array($row)){
-                        echo json_encode(array("state" => "error5"));
-                        return;
-                    }else{
-                        $data = array();
-                        $data['primernombre'] = $peng_primernombre;
-                        $data['segundonombre'] = $peng_segundonombre;
-                        $data['primerapellido'] = $peng_primerapellido;
-                        $data['segundoapellido'] = $peng_segundoapellido;
-                        $data['tipoidentificacion'] = $row[0]['TIDG_DESCRIPCION'];
-                        echo json_encode(array("state" => "success", "message" => "Documento encontrado", "person" => $data));
+        // Valido que como minimo exista: plantilla_evaluado, tipo_identificacion e identificacion
+        if(isset($_POST, $_POST['plantilla_evaluado'], $_POST['tipo_identificacion'],$_POST['identificacion']) && trim($_POST['plantilla_evaluado']) != "" && trim($_POST['tipo_identificacion']) != "" && trim($_POST['identificacion']) != ""){
+            $idplantilla = $_POST['plantilla_evaluado'];
+            $tipo_identificacion = $_POST['tipo_identificacion'];
+            $identificacion = $_POST['identificacion'];
+            $plantilla = PlantillaEvaluacion::model()->findByPk($idplantilla);
+            if(!is_null($plantilla)){
+                $tipolabor = $plantilla->plev_tipolabor;
+                $prog_id = null;
+                $unid_id = null;
+                $stmt = null;
+                $consultaok = false;
+                // DIRECTOR DE PROGRAMA - DECANO - VICERRECTOR
+                if($plantilla->plev_tipolabor == 3 || $plantilla->plev_tipolabor == 4 || $plantilla->plev_tipolabor == 5){
+                    // Si la plantilla es de director de programa debe existir la selección de la facultad y el programa
+                    if($plantilla->plev_tipolabor == 3 && isset($_POST['facultad'], $_POST['programa']) && trim($_POST['facultad']) != "" && trim($_POST['programa']) != ""){
+                        $unid_id = $_POST['programa'];
+                    }
+                    // Si la plantilla es de decano debe existir la selección de la facultad
+                    if($plantilla->plev_tipolabor == 4 && isset($_POST['facultad']) && trim($_POST['facultad']) != "" ){
+                        $unid_id = $_POST['facultad'];
+                    }
+                    // Si la plantilla es de vicerrector no es necesaria la facultad ni el programa
+                    if ($plantilla->plev_tipolabor == 5) {
+                        $unid_id = 0;
+                    }
+                    if(!is_null($unid_id)){
+                        $sql = 'BEGIN REPORTES.PR_REPORTES_CONSULTADPDEVA(:TIDG_ID, :PEGE_DOCUMENTOIDENTIDAD, :LABO_ID, :UNID_ID, :CURSOR); END;';
+                        $stmt = oci_parse($this->dbOracleConn, $sql);
+                        oci_bind_by_name($stmt, ":LABO_ID", $tipolabor);
+                        oci_bind_by_name($stmt, ":UNID_ID", $unid_id);
+                        $consultaok = true;
                     }
                 }
-            }
+                // DOCENTE
+                else if( $plantilla->plev_tipolabor == 1){
+                    // Si la plantilla es de docente debe existir la selección de la facultad y el programa
+                    if(isset($_POST['facultad'], $_POST['programa']) && trim($_POST['facultad']) != "" && trim($_POST['programa']) != "" ){
+                        $prog_id = $_POST['programa'];
+                        $sql = 'BEGIN REPORTES.PR_REPORTES_CONSDOCEGRUP(:TIDG_ID, :PEGE_DOCUMENTOIDENTIDAD, :PROG_ID, :CURSOR); END;';
+                        $stmt = oci_parse($this->dbOracleConn, $sql);
+                        oci_bind_by_name($stmt, ":PROG_ID", $prog_id);
+                        $consultaok = true;
+                    }
+                }
+                if($consultaok){
+                    $cursor = oci_new_cursor($this->dbOracleConn);
+                    oci_bind_by_name($stmt, ":TIDG_ID", $tipo_identificacion);
+                    oci_bind_by_name($stmt, ":PEGE_DOCUMENTOIDENTIDAD", $identificacion);
+                    oci_bind_by_name($stmt, ":CURSOR", $cursor,-1,SQLT_RSET);
+                    oci_execute($stmt);
+                    oci_execute($cursor);
+                    $existente = false;
+                    $resultado = array();
+                    while ($fila = oci_fetch_assoc($cursor)) {
+                        $existente = true;
+                        $grupo = array();
+                        //echo json_encode(array("fila" => $fila));
+                        if (!array_key_exists("nombre", $resultado)) {
+                            $resultado['nombre'] = $fila['NOMBRE'];
+                        }
+                        if($plantilla->plev_tipolabor == 1){
+                            $grupo['grup_id'] = $fila['GRUP_ID'];
+                            $grupo['mate_codigomateria'] = $fila['MATE_CODIGOMATERIA'];
+                            $grupo['mate_nombre'] = $fila['MATE_NOMBRE'];
+                            $grupo['grup_nombre'] = $fila['GRUP_NOMBRE'];
+                            $resultado['grupos'][] = $grupo;
+                        }
+                    }
+                    if($existente){
+                        echo json_encode(array("state" => "success", "message" => "Documento encontrado" ,"datos" => $resultado));
+                    }
+                    else{
+                        echo json_encode(array("state" => "error", "message" => "Documento no encontrado"));
+                    }
+                }else{
+                    echo json_encode(array("state" => "error", "message" => "Ha ocurrido un error, compruebe todos los datos."));
+                }
+            }    
         }
-        /*
-        $rowCount=$command->execute();   // ejecuta una sentencia SQL sin resultados
-        $dataReader=$command->query();   // ejecuta una consulta SQL
-        $rows=$command->queryAll();      // consulta y devuelve todas las filas de resultado
-        $row=$command->queryRow();       // consulta y devuelve la primera fila de resultado
-        $column=$command->queryColumn(); // consulta y devuelve la primera columna de resultado
-        $value=$command->queryScalar(); 
-        $sql = "SELECT * FROM GENERAL.PERSONAGENERAL P WHERE P.PEGE_DOCUMENTOIDENTIDAD = '41947221'";
-        $command = $oci->createCommand($sql);       
-        $dataReader = $command->query();
-        foreach($dataReader as $row) {
-            Yii::trace(CVarDumper::dumpAsString($row), 'vardump');
-        }*/
-    }
-
-    private function _verify_array($arreglo = array()){
-        if(empty($arreglo) || sizeof($arreglo) > 1){
-            return false;
-        }
-        else if(sizeof($arreglo) == 1)
-            return true;
     }
 
     /**
-     * FUNCIÓN DE PRUEBA, SE ELIMINARÁ LUEGO
-     * @param  [type] $identificacion [description]
-     * @return [type]                 [description]
+     * Función que permite clonar una encuesta dada por parametro.
+     * @access private
+     * @param  integer $iSurveyID Identificador de la encuesta a clonar.
+     * @param  string $titulo    Titulo que tendrá la nueva encuesta.
+     * @return array             Retorna un arreglo con la información de la nueva encuesta.
      */
-    public function probar($identificacion){
-        // Número de identifiación nulo
-        if(is_null($identificacion))
-            echo json_encode(array("state" => "error1"));
-        // Número de identifiación vacío
-        elseif (trim($identificacion) == "")
-            echo json_encode(array("state" => "error2"));
-        // Número de identifiación no vacío y no nulo, procedo a consultar
-        else{
-            // Creo la conexión con oracle
-            $oci = Yii::app()->dbOracle;
-            // Creo el comando con la consulta para obtener el PEGE_ID Y EL TIDG_ID
-            $row = Yii::app()->dbOracle->createCommand()
-            ->select('PEGE_ID, TIDG_ID')
-            ->from('GENERAL.PERSONAGENERAL P')
-            ->where('P.PEGE_DOCUMENTOIDENTIDAD = :DOCUMENTOIDENTIDAD', array(':DOCUMENTOIDENTIDAD'=>$identificacion));
-            
-            // No existe ningún resultado
-            Yii::trace(CVarDumper::dumpAsString($row), 'vardump');
-            $row = $row->queryAll();
-            if(!$this->_verify_array($row)){
-                echo json_encode(array("state" => "error3"));
-                Yii::trace(CVarDumper::dumpAsString($row), 'vardump');
-                return;
-            }else{
-                Yii::trace(CVarDumper::dumpAsString($row), 'vardump');
-                $pege_id = $row[0]['PEGE_ID'];
-                $tigd_id = $row[0]['TIDG_ID'];
-                // Creo el comando con la consulta para obtener el nombre y el apellido
-                $row = Yii::app()->dbOracle->createCommand()
-                ->select('PENG_PRIMERNOMBRE, PENG_SEGUNDONOMBRE, PENG_PRIMERAPELLIDO, PENG_SEGUNDOAPELLIDO')
-                ->from('GENERAL.PERSONANATURALGENERAL P')
-                ->where('P.PEGE_ID = :PEGE_ID', array(':PEGE_ID'=>$pege_id))
-                ->queryAll();
-                if(!$this->_verify_array($row)){
-                    echo json_encode(array("state" => "error4"));
-                    return;
-                }else{
-                    $peng_primernombre      = $row[0]['PENG_PRIMERNOMBRE'];
-                    $peng_segundonombre     = $row[0]['PENG_SEGUNDONOMBRE'];
-                    $peng_primerapellido    = $row[0]['PENG_PRIMERAPELLIDO'];
-                    $peng_segundoapellido   = $row[0]['PENG_SEGUNDOAPELLIDO'];
-                    // Creo el comando con la consulta para obtener el tipo de identificación
-                    $row = Yii::app()->dbOracle->createCommand()
-                    ->select('TIDG_DESCRIPCION')
-                    ->from('GENERAL.TIPODOCUMENTOGENERAL T')
-                    ->where('T.TIDG_ID = :TIDG_ID', array(':TIDG_ID'=>$tigd_id))
-                    ->queryAll();
-                    if(!$this->_verify_array($row)){
-                        echo json_encode(array("state" => "error5"));
-                        return;
-                    }else{
-                        echo json_encode(array("state" => "success"));
-                    }
+    private function copy_survey($iSurveyID, $titulo = "Titulo por defecto"){
+        $importsurvey = "";
+        $action = "copysurvey";
+        $iSurveyID = //sanitize_int(Yii::app()->request->getParam('sid'));
+        $iSurveyID = sanitize_int($iSurveyID);
+
+        if ($action == "importsurvey" || $action == "copysurvey")
+        {
+            // Start traitment and messagebox
+            $aData['bFailed'] = false; // Put a var for continue
+            if ($action == 'copysurvey')
+            {
+                //$iSurveyID = sanitize_int(Yii::app()->request->getParam('copysurveylist'));
+                $iSurveyID = $iSurveyID;
+                $aExcludes = array();
+
+                //$sNewSurveyName = Yii::app()->request->getPost('copysurveyname');titulo
+                $sNewSurveyName = $titulo;
+                //$aExcludes['quotas'] = true;
+                //$aExcludes['permissions'] = true;
+                //$aExcludes['answers'] = true;
+                //$aExcludes['conditions'] = true;
+                $aExcludes['dates'] = true;
+                /*if (Yii::app()->request->getPost('copysurveyexcludequotas') == "on")
+                {
+                    $aExcludes['quotas'] = true;
+                }
+                if (Yii::app()->request->getPost('copysurveyexcludepermissions') == "on")
+                {
+                    $aExcludes['permissions'] = true;
+                }
+                if (Yii::app()->request->getPost('copysurveyexcludeanswers') == "on")
+                {
+                    $aExcludes['answers'] = true;
+                }
+                if (Yii::app()->request->getPost('copysurveyresetconditions') == "on")
+                {
+                    $aExcludes['conditions'] = true;
+                }
+                if (Yii::app()->request->getPost('copysurveyresetstartenddate') == "on")
+                {
+                    $aExcludes['dates'] = true;
+                }*/
+                if (!$iSurveyID)
+                {
+                    $aData['sErrorMessage'] = gT("No survey ID has been provided. Cannot copy survey");
+                    $aData['bFailed'] = true;
+                }
+                elseif(!Survey::model()->findByPk($iSurveyID))
+                {
+                    $aData['sErrorMessage'] = gT("Invalid survey ID");
+                    $aData['bFailed'] = true;
+                }
+                /*elseif (!Permission::model()->hasSurveyPermission($iSurveyID, 'surveycontent', 'export') && !Permission::model()->hasSurveyPermission($iSurveyID, 'surveycontent', 'export'))
+                {
+                    $aData['sErrorMessage'] = gT("We are sorry but you don't have permissions to do this.");
+                    $aData['bFailed'] = true;
+                }*/
+                else
+                {
+                    Yii::app()->loadHelper('export');
+                    $copysurveydata = surveyGetXMLData($iSurveyID, $aExcludes);
                 }
             }
+
+            // Now, we have the survey : start importing
+            Yii::app()->loadHelper('admin/import');
+
+            if ($action == 'copysurvey' && !$aData['bFailed'])
+            {
+                $aImportResults = XMLImportSurvey('', $copysurveydata, $sNewSurveyName, null);
+                if (!isset($aExcludes['permissions']))
+                {
+                    Permission::model()->copySurveyPermissions($iSurveyID,$aImportResults['newsid']);
+                }
+            }
+            else
+            {
+                $aData['bFailed'] = true;
+            }
+
+            if (!$aData['bFailed'])
+            {
+                $aData['action'] = $action;
+                $aData['sLink'] = $this->getController()->createUrl('admin/survey/sa/view/surveyid/' . $aImportResults['newsid']);
+                $aData['aImportResults'] = $aImportResults;
+            }
         }
+        //Yii::trace(CVarDumper::dumpAsString($aData), 'vardump');
+        return $aData;
+        //$this->_renderWrappedTemplate('survey', 'importSurvey_view', $aData);
     }
 }

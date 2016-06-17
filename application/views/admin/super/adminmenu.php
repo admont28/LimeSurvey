@@ -59,7 +59,22 @@
 
     <div class="collapse navbar-collapse js-navbar-collapse pull-right">
         <ul class="nav navbar-nav navbar-right">
+            <!-- Performance Evaluation -->
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false" >Evaluación de desempeño<span class="caret"></span></a>
+                <ul class="dropdown-menu" role="menu">
 
+                    <!-- Template configuration -->
+                    <li>
+                        <a href="<?php echo $this->createUrl("/admin/teacherissues/sa/templateconfiguration"); ?>"><?php eT("Configuración de la plantilla");?></a>
+                    </li>
+
+                    <!-- Configuration Performance Evaluation -->
+                    <li>
+                        <a href="<?php echo $this->createUrl("/admin/teacherissues/sa/performanceevaluation"); ?>"><?php eT("Configuración evaluación de desempeño");?></a>
+                    </li>  
+                </ul>
+            </li>
             <!-- Configuration menu -->
             <?php $this->renderPartial( "/admin/super/_configuration_menu", $dataForConfigMenu ); ?>
 
@@ -74,44 +89,43 @@
                     <span style="margin-left: 0px;" class="caret"></span>
                 </a>
                 <ul class="dropdown-menu" role="menu">
-                         <?php if (Permission::model()->hasGlobalPermission('surveys','create')): ?>
-                         <!-- Create a new survey -->
-                         <li>
-                             <a href="<?php echo $this->createUrl("admin/survey/sa/newsurvey"); ?>">
-                                 <?php eT("Create a new survey");?>
-                             </a>
-                         </li>
+                    <?php if (Permission::model()->hasGlobalPermission('surveys','create')): ?>
+                     <!-- Create a new survey -->
+                    <li>
+                        <a href="<?php echo $this->createUrl("admin/survey/sa/newsurvey"); ?>">
+                            <?php eT("Create a new survey");?>
+                        </a>
+                    </li>
 
-                         <!-- Import a survey -->
-                         <li>
-                           <a href="<?php echo $this->createUrl("admin/survey/sa/newsurvey/tab/import"); ?>">
-                               <?php eT("Import a survey");?>
-                           </a>
-                         </li>
+                    <!-- Import a survey -->
+                    <li>
+                        <a href="<?php echo $this->createUrl("admin/survey/sa/newsurvey/tab/import"); ?>">
+                            <?php eT("Import a survey");?>
+                        </a>
+                    </li>
 
-                         <!-- Import a survey -->
-                         <li>
-                           <a href="<?php echo $this->createUrl("admin/survey/sa/newsurvey/tab/copy"); ?>">
-                               <?php eT("Copy a survey");?>
-                           </a>
-                         </li>
+                    <!-- Import a survey -->
+                    <li>
+                        <a href="<?php echo $this->createUrl("admin/survey/sa/newsurvey/tab/copy"); ?>">
+                           <?php eT("Copy a survey");?>
+                        </a>
+                    </li>
 
-                         <li class="divider"></li>
-                        <?php endif;?>
-                         <!-- List surveys -->
-                         <li>
-                             <a href="<?php echo $this->createUrl("admin/survey/sa/listsurveys"); ?>">
-                                 <?php eT("List surveys");?>
-                             </a>
-                         </li>
-                         <li>
-                             <a href="<?php echo $this->createUrl("admin/survey/sa/listmysurveys"); ?>">
-                                 Listar mis encuestas
-                             </a>
-                         </li>
-
-                       </ul>
-                     </li>
+                    <li class="divider"></li>
+                    <?php endif;?>
+                    <!-- List surveys -->
+                    <li>
+                        <a href="<?php echo $this->createUrl("admin/survey/sa/listsurveys"); ?>">
+                            <?php eT("List surveys");?>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="<?php echo $this->createUrl("admin/survey/sa/listmysurveys"); ?>">
+                            Listar mis encuestas
+                        </a>
+                    </li>
+                </ul>
+            </li>
 
             <!-- user menu -->
             <li class="dropdown">

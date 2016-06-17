@@ -92,10 +92,19 @@ if (!defined('BASEPATH'))
         <!-- Text elements -->
         <div class="row">
 			<div class="form-group">
-            	<label for="nombre_plantilla" class="col-lg-1 col-md-1 col-sm-1 col-xs-12 control-label">Nombre</label>
-            	<div class="col-lg-11 col-md-11 col-sm-11 col-xs-12">
+            	<label for="nombre_plantilla" class="col-lg-2 col-md-2 col-sm-2 col-xs-12 control-label">Nombre de la plantilla</label>
+            	<div class="col-lg-10 col-md-10 col-sm-10 col-xs-12">
             		<?php echo CHtml::textField("nombre_plantilla","",array('class'=>'form-control','maxlength'=>"200",'required'=>'required','autofocus'=>'autofocus','id'=>"nombre_plantilla", "placeholder" => "Ingrese el nombre de la nueva plantilla")); ?>
             	</div>
+            </div>
+            <div class='form-group'>
+                <label for='tipo_labor' class='col-lg-2 col-md-2 col-sm-2 col-xs-12 control-label'>¿Tipo de labor?</label>
+                <div class='col-md-10'>
+                    <label class='radio-inline'><input type='radio' class='tipo_labor bloquear' name='tipo_labor' value='1' required>PROFESORES</label>
+                    <label class='radio-inline'><input type='radio' name='tipo_labor' class='' value='3' >DIRECTOR DE PROGRAMA ACADÉMICO</label>
+                    <label class='radio-inline'><input type='radio' name='tipo_labor' class='' value='4' >DECANO DE LA FACULTAD</label>
+                    <label class='radio-inline'><input type='radio' name='tipo_labor' class='' value='5' >VICERRECTOR</label>
+                </div>
             </div>
             <div class="form-group">
             	<div class="col-md-4 col-md-offset-4 col-sm-5 col-sm-offset-4">
