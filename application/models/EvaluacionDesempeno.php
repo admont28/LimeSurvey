@@ -115,8 +115,10 @@ class EvaluacionDesempeno extends LSActiveRecord{
         
         $evde_pk_reference = (Yii::app()->db->getDriverName() == 'pgsql' ?' t.evde_pk::varchar' : 't.evde_pk');
         $evde_fechaevaluacion_reference = (Yii::app()->db->getDriverName() == 'pgsql' ?' t.evde_fechaevaluacion::varchar' : 't.evde_fechaevaluacion');
+        $evde_identificacionevaluado = (Yii::app()->db->getDriverName() == 'pgsql' ?' t.evde_identificacionevaluado::varchar' : 't.evde_identificacionevaluado');
         // Se compara con cada uno de los distintas columnas de la bd
         $criteria->compare($evde_pk_reference, $this->searched_value, true, 'OR');
+        $criteria->compare($evde_identificacionevaluado, $this->searched_value, true, 'OR');
         $criteria->compare($evde_fechaevaluacion_reference, $this->searched_value, true, 'OR');
         return new CActiveDataProvider($this, array(
             'criteria' => $criteria,

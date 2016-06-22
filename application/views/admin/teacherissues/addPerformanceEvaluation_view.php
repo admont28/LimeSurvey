@@ -40,7 +40,7 @@
             </div>
             <label for="identificacion" class="col-lg-1 col-md-1 col-sm-1 col-xs-12 control-label">Identificación: </label>
             <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
-               <?php echo CHtml::numberField("identificacion","",array('class'=>'form-control', 'min'=>0, 'required'=>'required','autofocus'=>'autofocus','id'=>"identificacion", "placeholder" => "Ingrese el número de identificación del evaluado","title" => "Introduzca el número de identificación de la persona a evaluar.")); ?>
+               <?php echo CHtml::numberField("identificacion","7532473",array('class'=>'form-control', 'min'=>0, 'required'=>'required','autofocus'=>'autofocus','id'=>"identificacion", "placeholder" => "Ingrese el número de identificación del evaluado","title" => "Introduzca el número de identificación de la persona a evaluar.")); ?>
                <p class="text-warning" id="mensaje_identificacion">Obligatorio</p>
             </div>
             <div class="col-md-1 col-lg-1 col-sm-1 col-xs-12">
@@ -271,14 +271,22 @@
                   $("#nombre_completo").val(datos['nombre']);
                   $("#mensaje_identificacion").removeClass("text-warning");
                   $("#mensaje_identificacion").addClass("text-success");
+                  var i = 0;
                   $.each(grupos, function (index, value){ 
-                     var html =  "<div class='col-md-1'>"+
-                                    "<input class='checkboxbtn ' type='checkbox' id='"+value.grup_id+"' name='grupos' data-materia='"+value.mate_nombre+"' data-grupo='"+value.grup_nombre+"' />"+
+                     var html =  "<div class='col-md-2'>"+
+                                    "<label class='radio-inline'>"+
+                                       "<input type='radio' name='grupos["+i+"]' value='true' required='required' id='"+value.grup_id+"' checked='checked' data-materia='"+value.mate_nombre+"' data-grupo='"+value.grup_nombre+"'> Habilitar"+
+                                    "</label>"+
+                                    "<label class='radio-inline'>"+
+                                       "<input type='radio' name='grupos["+i+"]' value='false' required='required' id='"+value.grup_id+"' data-materia='"+value.mate_nombre+"' data-grupo='"+value.grup_nombre+"'>Inhabilitar"+
+                                    "</label>"+
+                                    //"<input class='checkboxbtn ' type='radio' id='"+value.grup_id+"' name='grupos' data-materia='"+value.mate_nombre+"' data-grupo='"+value.grup_nombre+"' />"+
                                  "</div>"+
-                                 "<div class='col-md-11'>"+
+                                 "<div class='col-md-10'>"+
                                     "<p>"+value.mate_codigomateria+" ---- "+value.mate_nombre+" ---- "+value.grup_nombre+"</p>"+
                                  "</div>";
                      $("#grupos").append(html);
+                     i++;
                   });
                }
                if(data.message != ""){
@@ -364,36 +372,18 @@
       $.each(group_container, function(k, filafi) {
          var fuentesinformacion ={};
          var pesofi = $(filafi).find(".pesofi").val();
-         var gruposfi = $(filafi).find("input[name='grupos']:checked");
-         var existe_grupos = $(filafi).find($("input[name='grupos']")).length;
+         var gruposfi = $(filafi).find("input[type='radio']:checked");
          var grupos = new Array();
-         if(existe_grupos > 0){
-            var length_grupos = $(filafi).find($("input[name='grupos']:checked")).length;
-            if(length_grupos <= 0){
-               error = true;
-               swal({
-                  title: 'Oops... ¡Ha ocurrido un error!',
-                  text : "Debe seleccionar al menos 1 grupo.",
-                  type: 'error',
-                  confirmButtonColor: '#22722b',
-                  confirmButtonText: 'OK',
-                  buttonsStyling: true
-               });
-               $("#cargando").hide();
-               $("#save").prop("disabled", false);
-               e.stopPropagation();
-            }else{
-               $.each(gruposfi, function(index, value){
-                  var grupo = {};
-                  grupo['grup_id'] = value.id;
-                  grupo['mate_nombre'] = $(value).data('materia');
-                  grupo['grup_nombre'] = $(value).data('grupo');
-                  grupos.push(grupo);
-               });
-            } 
-         }
+         $.each(gruposfi, function(index, value){
+            var grupo = {};
+            grupo['grup_id'] = value.id;
+            grupo['mate_nombre'] = $(value).data('materia');
+            grupo['grup_nombre'] = $(value).data('grupo');
+            grupo['grup_estado'] = $(value).val();
+            grupos.push(grupo);
+         });
          var idfi = $(filafi).find("input[name='idfi']").val();
-         fuentesinformacion['gruposfi']   = grupos;
+         fuentesinformacion['gruposfi'] = grupos;
          fuentesinformacion['idfi']   = idfi;
          fuentesinformacion['pesofi'] = pesofi;
          fi.push(fuentesinformacion);
@@ -438,6 +428,8 @@
                      confirmButtonText: 'OK',
                      buttonsStyling: true
                   });
+                  $("#cargando").hide();
+                  $("#save").prop("disabled", false);
                }
             },
             error: function(xhr, status){

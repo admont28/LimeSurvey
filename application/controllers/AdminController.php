@@ -339,6 +339,14 @@ class AdminController extends LSYii_Controller
         Yii::app()->loadHelper('globalsettings');
         $adminimagebaseurl = Yii::app()->getBaseUrl(true)."/images/";
         setGlobalSetting('adminimagebaseurl', $adminimagebaseurl);
+        /*
+         * ----------------------------------------------------------------------------------------------
+         * MODIFICACIÓN REALIZADA POR: ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 21/06/2016
+         * Número de líneas: 1
+         * Se crea en la base de datos la dirección donde esta alojada la aplicación web, solicitado por NELSON MEJÍA LAVERDE para la implementación de los requisitos de grado en academusoft.
+         * ----------------------------------------------------------------------------------------------
+         */
+        setGlobalSetting('baseurl',Yii::app()->getBaseUrl(true));
         define('IMAGE_BASE_URL', Yii::app()->getConfig('adminimagebaseurl'));
         define('LOGO_URL',IMAGE_BASE_URL."LOGO-UQ.png");
 

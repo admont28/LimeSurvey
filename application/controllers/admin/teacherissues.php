@@ -22,6 +22,9 @@
 */
 class TeacherIssues extends Survey_Common_Action {
 
+    const USUARIO  = 'DEW6';
+    const PASSWORD = 'H#h1/d3w&';
+    const CADENA_CONEXION = '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.16.1.36)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=SIAFINE)))';
     const CODIFICACION_CARACTERES = 'AL32UTF8';
 
     private $dbOracleConn;
@@ -324,6 +327,15 @@ class TeacherIssues extends Survey_Common_Action {
                                     $error_suma = true;
                                     break;
                                 }
+                                $aGrupos = $fi->gruposfi;
+                                if(sizeof($aGrupos) > 0){
+                                    // Verifico si todos los grupos están inhabilitados
+                                    $resultado_verificacion = $this->_verificar_todos_grupos_inhabilitados($aGrupos);
+                                    if($resultado_verificacion && $fi->pesofi != 0 ){
+                                        $error_suma = true;
+                                        break;
+                                    }
+                                }
                             }
                             if(!$error_suma && $suma == 100){
                                 $error_en_bd = false;
@@ -341,44 +353,10 @@ class TeacherIssues extends Survey_Common_Action {
                                         if(!is_null($fi->idfi) ){
                                             $fuenteInfo = FuenteInformacion::model()->findByPk($fi->idfi);
                                             $aGrupos = $fi->gruposfi;
-                                            if($fi->pesofi > 0){
-                                                if(sizeof($aGrupos) > 0){
-                                                    foreach ($aGrupos as $key => $grupofi) {
-                                                        $aData = $this->copy_survey($fuenteInfo->surv_fuin_fk, "EVALUACIÓN DE DESEMPEÑO - FUENTE: ".$fuenteInfo->fuin_nombre." - EVALUADO: ".$nombre_evaluado." - MATERIA: ".$grupofi->mate_nombre." - GRUPO: ".$grupofi->grup_nombre);
+                                            if(sizeof($aGrupos) > 0){
+                                                foreach ($aGrupos as $key => $grupofi) {
+                                                    $aData = $this->copy_survey($fuenteInfo->surv_fuin_fk, "EVALUACIÓN DE DESEMPEÑO - FUENTE: ".$fuenteInfo->fuin_nombre." - EVALUADO: ".$nombre_evaluado." - MATERIA: ".$grupofi->mate_nombre." - GRUPO: ".$grupofi->grup_nombre);
 
-                                                        if(isset($aData['bFailed']) && $aData['bFailed'] == true){
-                                                            $error_en_bd = true;
-                                                            break;
-                                                        }else{
-                                                            $aImportResults = $aData['aImportResults'];
-                                                            $surveyid = $aImportResults['newsid'];
-                                                            $idEncuestas[] = $surveyid;
-                                                            $grupo = new Grupo;
-                                                            $grupo->grup_nombre = $grupofi->mate_nombre." - ".$grupofi->grup_nombre;
-                                                            $grupo->grup_grupoid = $grupofi->grup_id;
-                                                            $grupo->surv_grup_fk = $surveyid;
-                                                            if($grupo->save(true)){
-                                                                $grupoid = $grupo->getPrimaryKey();
-                                                                $idGrupos[] = $grupoid;
-                                                                $evaldesefueninfo = new EvaluacionDesempenoFuenteInformacion;
-                                                                $evaldesefueninfo->evde_edfi_fk = $evaluacionDesempenoId;
-                                                                $evaldesefueninfo->fuin_edfi_fk = $fuenteInfo->fuin_pk;
-                                                                $evaldesefueninfo->grup_edfi_fk = $grupoid;
-                                                                $evaldesefueninfo->edfi_peso = $fi->pesofi;
-                                                                if($evaldesefueninfo->save(true)){
-                                                                    $idEvaluacionesFuentes[] = $evaldesefueninfo->getPrimaryKey();
-                                                                }else{
-                                                                    $error_en_bd = true;
-                                                                }
-                                                            }else{
-                                                                $error_en_bd = true;
-                                                            }
-                                                        }
-                                                    } // Cierre foreach de gruposfi
-                                                }else{
-                                                    // No vienen grupos de materias
-                                                    $aData = $this->copy_survey($fuenteInfo->surv_fuin_fk, "EVALUACIÓN DE DESEMPEÑO - FUENTE: ".$fuenteInfo->fuin_nombre." - EVALUADO: ".$nombre_evaluado);
-                                                    
                                                     if(isset($aData['bFailed']) && $aData['bFailed'] == true){
                                                         $error_en_bd = true;
                                                         break;
@@ -387,9 +365,12 @@ class TeacherIssues extends Survey_Common_Action {
                                                         $surveyid = $aImportResults['newsid'];
                                                         $idEncuestas[] = $surveyid;
                                                         $grupo = new Grupo;
-                                                        $nombre_grupo = $fuenteInfo->fuin_nombre." - ".$identificacion_evaluado;
-                                                        $grupo->grup_nombre = $nombre_grupo;
+                                                        $grupo->grup_nombre = $grupofi->mate_nombre." - ".$grupofi->grup_nombre;
+                                                        $grupo->grup_grupoid = $grupofi->grup_id;
                                                         $grupo->surv_grup_fk = $surveyid;
+                                                        $grupo->grup_estado = ($grupofi->grup_estado === "true") ? true: false;
+                                                        if($fi->pesofi == 0)
+                                                            $grupo->grup_estado = false;
                                                         if($grupo->save(true)){
                                                             $grupoid = $grupo->getPrimaryKey();
                                                             $idGrupos[] = $grupoid;
@@ -407,22 +388,43 @@ class TeacherIssues extends Survey_Common_Action {
                                                             $error_en_bd = true;
                                                         }
                                                     }
-                                                }
-                                            }
-                                            // peso de fuente igual a 0
-                                            else if($fi->pesofi == 0){
-                                                $evaldesefueninfo = new EvaluacionDesempenoFuenteInformacion;
-                                                $evaldesefueninfo->evde_edfi_fk = $evaluacionDesempenoId;
-                                                $evaldesefueninfo->fuin_edfi_fk = $fuenteInfo->fuin_pk;
-                                                $evaldesefueninfo->grup_edfi_fk = 0;
-                                                $evaldesefueninfo->edfi_peso = $fi->pesofi;
-                                                if($evaldesefueninfo->save(true)){
-                                                    $idEvaluacionesFuentes[] = $evaldesefueninfo->getPrimaryKey();
-                                                }else{
+                                                } // Cierre foreach de gruposfi
+                                            }else{
+                                                // No vienen grupos de materias
+                                                $aData = $this->copy_survey($fuenteInfo->surv_fuin_fk, "EVALUACIÓN DE DESEMPEÑO - FUENTE: ".$fuenteInfo->fuin_nombre." - EVALUADO: ".$nombre_evaluado);
+                                                
+                                                if(isset($aData['bFailed']) && $aData['bFailed'] == true){
                                                     $error_en_bd = true;
+                                                    break;
+                                                }else{
+                                                    $aImportResults = $aData['aImportResults'];
+                                                    $surveyid = $aImportResults['newsid'];
+                                                    $idEncuestas[] = $surveyid;
+                                                    $grupo = new Grupo;
+                                                    $nombre_grupo = $fuenteInfo->fuin_nombre." - ".$identificacion_evaluado;
+                                                    $grupo->grup_nombre = $nombre_grupo;
+                                                    $grupo->surv_grup_fk = $surveyid;
+                                                    $grupo->grup_estado = true;
+                                                    if($fi->pesofi == 0)
+                                                        $grupo->grup_estado = false;
+                                                    if($grupo->save(true)){
+                                                        $grupoid = $grupo->getPrimaryKey();
+                                                        $idGrupos[] = $grupoid;
+                                                        $evaldesefueninfo = new EvaluacionDesempenoFuenteInformacion;
+                                                        $evaldesefueninfo->evde_edfi_fk = $evaluacionDesempenoId;
+                                                        $evaldesefueninfo->fuin_edfi_fk = $fuenteInfo->fuin_pk;
+                                                        $evaldesefueninfo->grup_edfi_fk = $grupoid;
+                                                        $evaldesefueninfo->edfi_peso = $fi->pesofi;
+                                                        if($evaldesefueninfo->save(true)){
+                                                            $idEvaluacionesFuentes[] = $evaldesefueninfo->getPrimaryKey();
+                                                        }else{
+                                                            $error_en_bd = true;
+                                                        }
+                                                    }else{
+                                                        $error_en_bd = true;
+                                                    }
                                                 }
                                             }
-                                            
                                         }
                                     } // End foreach
                                 }else{
@@ -518,77 +520,194 @@ class TeacherIssues extends Survey_Common_Action {
      * @return void Muestra la página de edición de evaluación de desempeño.
      */
     public function editperformanceevaluation($performanceevaluationid){
-        $evaluacionDesempeno = EvaluacionDesempeno::model()->findByPk($performanceevaluationid);
-        if(!is_null($evaluacionDesempeno)){
-            $aData = array();
-            $aData['evaluacionDesempeno'] = $evaluacionDesempeno;
-            $criteria = new CDbCriteria;
-            $criteria->addCondition("evde_edfi_fk = :evde_pk");
-            $criteria->params = array(':evde_pk' => $evaluacionDesempeno->evde_pk);
-            $edfi = EvaluacionDesempenoFuenteInformacion::model()->findAll($criteria);
-            foreach ($edfi as $row) {
-                $fuenteInformacion = array();
-                $fi = FuenteInformacion::model()->findByPk($row->fuin_edfi_fk);
-                if(!is_null($fi)){
-                    if(!isset($aData['plantilla'])){
-                        $plantilla = PlantillaEvaluacion::model()->findByPk($fi->plev_fuin_fk);
-                        $aData['plantilla'] = $plantilla;
-                        $sql = "";
-                        $nombre = "";
-                        if($plantilla->plev_tipolabor == 1 ){
-                            $sql = "SELECT PROGRAMA FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA WHERE PROG_ID = :ID_DEPENDENCIA";
-                            $nombre = "PROGRAMA";
-                        }
-                        else if($plantilla->plev_tipolabor == 3 ){
-                            $sql = "SELECT PROGRAMA FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA WHERE UNID_DIRPROGRAMA = :ID_DEPENDENCIA";
-                            $nombre = "PROGRAMA";
-                            
-                        }else if($plantilla->plev_tipolabor == 4){
-                            $sql = "SELECT UNID_NOMBRE FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA WHERE UNID_ID = :ID_DEPENDENCIA";
-                            $nombre = "UNID_NOMBRE";
-                           
-                        }
-                        else if($plantilla->plev_tipolabor == 5){
-                            $sql = "SELECT UNID_NOMBRE FROM ACADEMICO.UNIDAD WHERE UNID_ID = :ID_DEPENDENCIA";
-                            $nombre = "UNID_NOMBRE";
-                        }
-                        if($sql != "" && $nombre != ""){
-                            $dependencia_evaluado = $evaluacionDesempeno->evde_dependenciaevaluado;
-                            $stmt = oci_parse($this->dbOracleConn, $sql);
-                            oci_bind_by_name($stmt, ":ID_DEPENDENCIA", $dependencia_evaluado);
-                            oci_execute($stmt);
-                            while ($entry = oci_fetch_assoc($stmt)) {
-                                $aData['dependencia'] = $entry[$nombre];
-                            }
-                        }
+        if(isset($_POST) && sizeof($_POST) > 0 && isset($_POST['informacion'])){
+            header("Content-Type: application/json");
+            $informacion = json_decode($_POST['informacion']);
+            $idevaluacion = $informacion->idevaluacion;
+            $evaluacionDesempeno = EvaluacionDesempeno::model()->findByPk($idevaluacion);
+            if(is_null($evaluacionDesempeno)){
+                echo json_encode(array("state" => "error", "message" => "Identificador de la evaluación de desempeño no válido."));
+                die();
+            }
+            $fuentes = $informacion->fuentes;
+            $peso_total = 0;
+            foreach ($fuentes as $fi) {
+                $peso_total += $fi->pesofi;
+            }
+            if($peso_total != 100){
+                echo json_encode(array("state" => "error", "message" => "La suma de los pesos de la fuentes de información debe ser igual a 100%"));
+                die();
+            }
+            $transaction = Yii::app()->db->beginTransaction();
+            foreach ($fuentes as $fi) {
+                $idfi = $fi->idfi;
+                $fuenteInformacion = FuenteInformacion::model()->findByPk($idfi);
+                if(is_null($fuenteInformacion)){
+                    echo json_encode(array("state" => "error", "message" => "Identificador de la fuente de información no válido."));
+                    $transaction->rollback();
+                    die();
+                }
+                $pesofi = $fi->pesofi;
+                $gruposfi = $fi->gruposfi;
+                // Con este if verifico que si todos los grupos que vengan están en falso en su estado, establezco el peso en 0 para la fuente de información, si existe al menos 1 con estado en true, se conserva el peso que venga desde la interfaz.
+                $resultado_comprobacion = $this->_verificar_todos_grupos_inhabilitados($gruposfi);
+                if($resultado_comprobacion){
+                    $pesofi = 0;
+                }
+                else if($pesofi < 1){
+                    echo json_encode(array("state" => "error", "message" => "Debe establecer un peso para los grupos habilitados."));
+                    $transaction->rollback();
+                    die();
+                }
+                foreach ($gruposfi as $gfi) {
+                    $grup_estado = ($gfi->grup_estado == "true") ? true : false;
+                    $grup_id = $gfi->grup_id;
+                    $grupo = Grupo::model()->findByPk($grup_id);
+                    if(is_null($grupo)){
+                        echo json_encode(array("state" => "error", "message" => "Identificador del grupo no válido."));
+                        $transaction->rollback();
+                        die();
                     }
-                    
-                    $survey_model = Survey::model()->findByPk($fi->surv_fuin_fk);
-                    $surveyinfo = $survey_model->getSurveyinfo();
-                    $grupo_fi = Grupo::model()->findByPk($row->grup_edfi_fk);
-                    $fuenteInformacion['idfi'] = $fi->fuin_pk;
-                    $fuenteInformacion['nombre_fi'] = $fi->fuin_nombre;
-                    $fuenteInformacion['id_encuesta'] = $fi->surv_fuin_fk;
-                    $fuenteInformacion['nombre_encuesta'] = $surveyinfo['surveyls_title'];
-                    $fuenteInformacion['peso_fi'] = $row->edfi_peso;
-                    if(!is_null($grupo_fi)){
-                        $survey_model = Survey::model()->findByPk($grupo_fi->surv_grup_fk);
-                        $surveyinfo = $survey_model->getSurveyinfo();
-                        $fuenteInformacion['nombre_encuesta_clonada'] = $surveyinfo['surveyls_title'];
-                        $fuenteInformacion['id_encuesta_clonada'] = $grupo_fi->surv_grup_fk;
-                    }else{
-                        $fuenteInformacion['id_encuesta_clonada'] = "SIN ENCUESTA CLONADA";
+                    $grupo->grup_estado = $grup_estado;
+                    if(!$grupo->save(true)){
+                        echo json_encode(array("state" => "error", "message" => "Ha ocurrido un error inesperado, por favor inténtelo de nuevo."));
+                        $transaction->rollback();
+                        die();
                     }
-                    $aData['fi'][] = $fuenteInformacion;
+                }
+                $criteria = new CDbCriteria();
+                $criteria->addCondition("evde_edfi_fk = :evde_pk AND fuin_edfi_fk = :fuin_pk");
+                $criteria->params = array(":evde_pk" => $idevaluacion, ":fuin_pk" => $idfi);
+                $filas_fectadas = EvaluacionDesempenoFuenteInformacion::model()->updateAll(array("edfi_peso" => $pesofi),$criteria);
+                if($filas_fectadas < 1 ){
+                    echo json_encode(array("state" => "error", "message" => "Ha ocurrido un error inesperado, por favor inténtelo de nuevo."));
+                    $transaction->rollback();
+                    die();
                 }
             }
-            Yii::trace(CVarDumper::dumpAsString($aData), 'vardump');
-            $this->_renderWrappedTemplate('teacherissues', 'viewPerformanceEvaluation_view', $aData);
+            $criteria = new CDbCriteria();
+            $criteria->select = "edfi_peso, evde_edfi_fk, fuin_edfi_fk";
+            $criteria->distinct = true;
+            $criteria->addCondition("evde_edfi_fk = :evde_pk ");
+            $criteria->params = array(":evde_pk" => $idevaluacion);
+            $edfi = EvaluacionDesempenoFuenteInformacion::model()->findAll($criteria);
+            $suma_total = 0;
+            foreach ($edfi as $fila) {
+                $suma_total += (int)$fila->edfi_peso;
+            }
+            if($suma_total != 100){
+                echo json_encode(array("state" => "error", "message" => "La suma de los pesos de la fuentes de información debe ser igual a 100%"));
+                $transaction->rollback();
+                die();
+            }
+            // Si todo sale bien, hago el commit. Si algo falla en el codigo de arriba, siempre se hace un die() que finaliza el escript, antecedido del rollback de la transacción.
+            $transaction->commit();
+            echo json_encode(array("state" => "success", "message" => "La evaluación de desempeño se ha editado con éxito.")); 
         }else{
-            Yii::app()->setFlashMessage(gT("Identificador de evaluación de desempeño no válido."), "error");
-            $this->getController()->redirect(array("admin/teacherissues/sa/performanceevaluation"));
-            die();
+            $evaluacionDesempeno = EvaluacionDesempeno::model()->findByPk($performanceevaluationid);
+            if(!is_null($evaluacionDesempeno)){
+                $aData = array();
+                $aData['evaluacionDesempeno'] = $evaluacionDesempeno;
+                $criteria = new CDbCriteria;
+                $criteria->addCondition("evde_edfi_fk = :evde_pk");
+                $criteria->select = 'fuin_edfi_fk';
+                $criteria->distinct = true;
+                $criteria->params = array(':evde_pk' => $evaluacionDesempeno->evde_pk);
+                $criteria->order = 'fuin_edfi_fk ASC';
+                $edfi = EvaluacionDesempenoFuenteInformacion::model()->findAll($criteria);
+                foreach ($edfi as $row) {
+                    $criteria = new CDbCriteria;
+                    $criteria->addCondition("fuin_edfi_fk = :fuin_pk AND evde_edfi_fk = :evde_pk");
+                    $criteria->params = array(':fuin_pk' => $row->fuin_edfi_fk, ":evde_pk" => $evaluacionDesempeno->evde_pk);
+                    $criteria->order = 'fuin_edfi_fk ASC';
+                    $edfi2 = EvaluacionDesempenoFuenteInformacion::model()->findAll($criteria);
+                    $fuenteInformacion = array();
+                    $i = 0;
+                    foreach ($edfi2 as $row2) {
+                        $fi = FuenteInformacion::model()->findByPk($row2->fuin_edfi_fk);
+                        if(!is_null($fi)){
+                            if(!isset($aData['plantilla'])){
+                                $plantilla = PlantillaEvaluacion::model()->findByPk($fi->plev_fuin_fk);
+                                $aData['plantilla'] = $plantilla;
+                                $sql = "";
+                                $nombre = "";
+                                if($plantilla->plev_tipolabor == 1 ){
+                                    $sql = "SELECT PROGRAMA FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA WHERE PROG_ID = :ID_DEPENDENCIA";
+                                    $nombre = "PROGRAMA";
+                                }
+                                else if($plantilla->plev_tipolabor == 3 ){
+                                    $sql = "SELECT PROGRAMA FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA WHERE UNID_DIRPROGRAMA = :ID_DEPENDENCIA";
+                                    $nombre = "PROGRAMA";
+                                    
+                                }else if($plantilla->plev_tipolabor == 4){
+                                    $sql = "SELECT UNID_NOMBRE FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA WHERE UNID_ID = :ID_DEPENDENCIA";
+                                    $nombre = "UNID_NOMBRE";
+                                   
+                                }
+                                else if($plantilla->plev_tipolabor == 5){
+                                    $sql = "SELECT UNID_NOMBRE FROM ACADEMICO.UNIDAD WHERE UNID_ID = :ID_DEPENDENCIA";
+                                    $nombre = "UNID_NOMBRE";
+                                }
+                                if($sql != "" && $nombre != ""){
+                                    $dependencia_evaluado = $evaluacionDesempeno->evde_dependenciaevaluado;
+                                    $stmt = oci_parse($this->dbOracleConn, $sql);
+                                    oci_bind_by_name($stmt, ":ID_DEPENDENCIA", $dependencia_evaluado);
+                                    oci_execute($stmt);
+                                    while ($entry = oci_fetch_assoc($stmt)) {
+                                        $aData['dependencia'] = $entry[$nombre];
+                                    }
+                                }
+                            }
+                            $survey_model = Survey::model()->findByPk($fi->surv_fuin_fk);
+                            $surveyinfo = $survey_model->getSurveyinfo();
+                            $grupo_fi = Grupo::model()->findByPk($row2->grup_edfi_fk);
+                            $fuenteInformacion[$i]['idfi'] = $fi->fuin_pk;
+                            $fuenteInformacion[$i]['nombre_fi'] = $fi->fuin_nombre;
+                            $fuenteInformacion[$i]['id_encuesta'] = $fi->surv_fuin_fk;
+                            $fuenteInformacion[$i]['nombre_encuesta'] = $surveyinfo['surveyls_title'];
+                            $fuenteInformacion[$i]['peso_fi'] = $row2->edfi_peso;
+                            if(!is_null($grupo_fi) && $grupo_fi->surv_grup_fk != 0){
+                                $survey_model = Survey::model()->findByPk($grupo_fi->surv_grup_fk);
+                                $surveyinfo = $survey_model->getSurveyinfo();
+                                $fuenteInformacion[$i]['id_grupo'] = $grupo_fi->grup_pk;
+                                $fuenteInformacion[$i]['estado_grupo'] = $grupo_fi->grup_estado;
+                                $fuenteInformacion[$i]['nombre_encuesta_clonada'] = $surveyinfo['surveyls_title'];
+                                $fuenteInformacion[$i]['id_encuesta_clonada'] = $grupo_fi->surv_grup_fk;
+                            }else{
+                                $fuenteInformacion[$i]['id_grupo'] = 0;
+                                $fuenteInformacion[$i]['estado_grupo'] = false;
+                                $fuenteInformacion[$i]['id_encuesta_clonada'] = "SIN ENCUESTA CLONADA";
+                            }
+                            
+                        }
+                        $i++;
+                    }
+                    $aData['fi'][] = $fuenteInformacion;   
+                }
+                $this->_renderWrappedTemplate('teacherissues', 'viewPerformanceEvaluation_view', $aData);
+            }else{
+                Yii::app()->setFlashMessage(gT("Identificador de evaluación de desempeño no válido."), "error");
+                $this->getController()->redirect(array("admin/teacherissues/sa/performanceevaluation"));
+                die();
+            }
         }
+    }
+
+    /**
+     * Función que permite verificar si el estado de todos los grupos es falso, con 1 solo que sea verdadero devolverá false.
+     * @access public
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 22/06/2016
+     * @param  array  $gruposfi Grupos de las fuentes de información
+     * @return boolean          Retorna true si todos los grupos están inhabilitados (estado false), de lo contrario retorna false.
+     */
+    private function _verificar_todos_grupos_inhabilitados($gruposfi = array()){
+        foreach ($gruposfi as $gfi) {
+            //echo "- ID ".$gfi->grup_id." Estado: ".$gfi->grup_estado;
+            if(isset($gfi->grup_estado) && $gfi->grup_estado == "true"){
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -784,6 +903,8 @@ class TeacherIssues extends Survey_Common_Action {
                     EvaluacionDesempenoFuenteInformacion::model()->deleteAll($criteria);
                     foreach ($edfi as $row) {
                         $grupo = Grupo::model()->findByPk($row->grup_edfi_fk);
+                        if($grupo->grup_pk == 0)
+                            continue;
                         $grupo->delete();
                         Survey::model()->deleteSurvey($grupo->surv_grup_fk);
                     }
@@ -1080,5 +1201,27 @@ class TeacherIssues extends Survey_Common_Action {
         //Yii::trace(CVarDumper::dumpAsString($aData), 'vardump');
         return $aData;
         //$this->_renderWrappedTemplate('survey', 'importSurvey_view', $aData);
+    }
+        //$surveyid = sanitize_int($surveyid);
+        //no survey ID? -> come and get one
+        if (!isset($surveyid)) {
+            $surveyid=returnGlobal('sid');
+        }
+        //$aData['surveyid'] = $surveyid;
+        // Set language for questions and answers to base language of this survey
+        //$language = Survey::model()->findByPk($surveyid)->language;
+        //$aData['language'] = $language;
+        //Select public language file
+        //$row  = Survey::model()->find('sid = :sid', array(':sid' => $surveyid));
+        //Yii::trace(CVarDumper::dumpAsString($row), 'vardump');
+         //store all the data in $rows
+        //$rows = Question::model()->getQuestionList($surveyid, $language);
+         //SORT IN NATURAL ORDER!
+        //usort($rows, 'groupOrderThenQuestionOrder');
+        //Yii::trace(CVarDumper::dumpAsString($rows), 'vardump');
+        //Yii::app()->loadHelper('admin/statistics');
+        $helper = new statistics_helper();
+        $helper->generate_results_performance_evaluation($performanceevaluationid);
+        exit;
     }
 }
