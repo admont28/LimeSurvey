@@ -53,13 +53,20 @@
 		                                   <label for='peso_fi_<?php echo $primero['idfi']; ?>' class='col-md-1'>Peso: </label>
 		                                   <div class='col-md-3'>
 		                                    	<div class='input-group'>
-		                                        	<input min='0' max='100' step='1' placeholder='Peso de esta fuente de información' required='required' type='number' class='form-control currency pesofi bloquear peso_idfi_<?php echo $primero['idfi']; ?>' name='peso_fi_<?php echo $primero['idfi']; ?>' id='peso_fi_<?php echo $primero['idfi']; ?>' value='<?php echo $primero['peso_fi']; ?>'  style='color: #000;'  data-fi='<?php echo $primero['idfi']; ?>' />
+		                                        	<input min='0' max='100' step='1' placeholder='Peso de esta fuente de información' required='required' type='number' class='form-control currency pesofi bloquear peso_idfi_<?php echo $primero['idfi']; ?>' name='peso_fi_<?php echo $primero['idfi']; ?>' id='peso_fi_<?php echo $primero['idfi']; ?>' value='<?php echo $primero['peso_fi']; ?>' <?php if($primero['peso_fi'] == 0) echo "disabled='disabled'"; ?> style='color: #000;'  data-fi='<?php echo $primero['idfi']; ?>' />
 		                                           <span class='input-group-addon'>%</span>
 		                                        </div>
 		                                    </div>
 		                                </div>
+		                                <div class='form-group'>
+		                                   <label for='encuesta_fi_<?php echo $primero['idfi']; ?>' class='col-md-2'>Encuesta base: </label>
+		                                   <div class='col-md-10' >
+		                                      <input type='text' id='encuesta_fi_<?php echo $primero['idfi']; ?>' name='encuesta_fi_<?php echo $primero['idfi']; ?>' required='required' class='form-control survey encuestafi bloquear' disabled='disabled' data-sid='<?php echo $primero['id_encuesta']; ?>' value='<?php echo $primero['nombre_encuesta']; ?>' style='color: #000;' />
+		                                   </div>
+		                                </div>
 							<?php foreach ($value as $llave => $valor): ?>
 										<div class='form-group'>
+											<label for='estado_grupo_fi' class='col-md-2 '>Estado del grupo:</label>
 			            					<div class='col-md-2'>
 			                                    <label class='radio-inline'>
 			                                       	<input type='radio' name='estado_grupo_fi_<?php echo $valor['id_grupo']; ?>' value='true' required='required' id="<?php echo $valor['id_grupo']; ?>" <?php  if($valor['estado_grupo']) echo "checked='checked'"; ?> class='estadogrupofi bloquear' required='required' data-fi="<?php echo $valor['idfi']; ?>" data-idgrup='<?php echo $valor['id_grupo']; ?>'> Habilitado
@@ -68,7 +75,7 @@
 			                                       	<input type='radio' name='estado_grupo_fi_<?php echo $valor['id_grupo']; ?>' value='false' required='required' id="<?php echo $valor['id_grupo']; ?>" <?php  if(!$valor['estado_grupo']) echo "checked='checked'"; ?> class='estadogrupofi bloquear' required='required' data-fi="<?php echo $valor['idfi']; ?>" data-idgrup='<?php echo $valor['id_grupo']; ?>'> Inhabilitado
 			                                    </label>
 			                                </div>
-			                                <div class='col-md-10'>
+			                                <div class='col-md-8'>
 			                                    <p><?php echo $valor['nombre_encuesta_clonada'] ?></p>
 			                                </div>
 			                            </div>
@@ -95,13 +102,13 @@
 		                                   <label for='peso_fi_<?php echo $valor['idfi']; ?>' class='col-md-1'>Peso: </label>
 		                                   <div class='col-md-3'>
 		                                    	<div class='input-group'>
-		                                        	<input min='0' max='100' step='1' placeholder='Peso de esta fuente de información' required='required' type='number' class='form-control currency pesofi bloquear peso_idfi_<?php echo $valor['idfi']; ?>' name='peso_fi_<?php echo $valor['idfi']; ?>' id='peso_fi_<?php echo $valor['idfi']; ?>' value='<?php echo $valor['peso_fi']; ?>'  style='color: #000;'  data-fi='<?php echo $valor['idfi']; ?>' />
+		                                        	<input min='0' max='100' step='1' placeholder='Peso de esta fuente de información' required='required' type='number' class='form-control currency pesofi bloquear peso_idfi_<?php echo $valor['idfi']; ?>' name='peso_fi_<?php echo $valor['idfi']; ?>' id='peso_fi_<?php echo $valor['idfi']; ?>' value='<?php echo $valor['peso_fi']; ?>' <?php if($valor['peso_fi'] == 0) echo "disabled='disabled'"; ?> style='color: #000;'  data-fi='<?php echo $valor['idfi']; ?>' />
 		                                           <span class='input-group-addon'>%</span>
 		                                        </div>
 		                                    </div>
 		                                </div>
 		                                <div class='form-group'>
-		                                   <label for='encuesta_fi_<?php echo $valor['idfi']; ?>' class='col-md-2'>Encuesta: </label>
+		                                   <label for='encuesta_fi_<?php echo $valor['idfi']; ?>' class='col-md-2'>Encuesta base: </label>
 		                                   <div class='col-md-10' >
 		                                      <input type='text' id='encuesta_fi_<?php echo $valor['idfi']; ?>' name='encuesta_fi_<?php echo $valor['idfi']; ?>' required='required' class='form-control survey encuestafi bloquear' disabled='disabled' data-sid='<?php echo $valor['id_encuesta']; ?>' value='<?php echo $valor['nombre_encuesta']; ?>' style='color: #000;' />
 		                                   </div>
@@ -120,11 +127,11 @@
 		                                   	</div>
 		                                </div>
 		                                <div class='form-group'>
-											<label for='estado_grupo_fi' class='col-md-2 '>Estado del grupo</label>
+											<label for='estado_grupo_fi' class='col-md-2 '>Estado de la fuente de información:</label>
 											<div class='col-md-2'>
 												<input type='hidden' name='idgrup' id='idgrup_<?php echo $valor['id_grupo']; ?>' value='<?php echo $valor['id_grupo']; ?>' />
-												<label class='radio-inline'><input type='radio' class='estadogrupofi bloquear' name='estado_grupo_fi_<?php echo $valor['id_grupo']; ?>' value='true' required='required' <?php if($valor['estado_grupo']) echo "checked='checked'"; ?> id='<?php echo $valor['id_grupo']; ?>' data-fi="<?php echo $valor['idfi']; ?>" data-idgrup='<?php echo $valor['id_grupo']; ?>' >Habilitado</label>
-												<label class='radio-inline'><input type='radio' class='estadogrupofi bloquear' name='estado_grupo_fi_<?php echo $valor['id_grupo']; ?>'  value='false' required='required' <?php if(!$valor['estado_grupo']) echo "checked='checked'"; ?> id='<?php echo $valor['id_grupo']; ?>' data-fi="<?php echo $valor['idfi']; ?>" data-idgrup='<?php echo $valor['id_grupo']; ?>' >Inhabilitado</label>
+												<label class='radio-inline'><input type='radio' class='estadogrupofi bloquear' name='estado_grupo_fi_<?php echo $valor['id_grupo']; ?>' value='true' required='required' <?php if($valor['estado_grupo']) echo "checked='checked'"; ?> id='<?php echo $valor['id_grupo']; ?>' data-fi="<?php echo $valor['idfi']; ?>" data-idgrup='<?php echo $valor['id_grupo']; ?>' >Habilitada</label>
+												<label class='radio-inline'><input type='radio' class='estadogrupofi bloquear' name='estado_grupo_fi_<?php echo $valor['id_grupo']; ?>'  value='false' required='required' <?php if(!$valor['estado_grupo']) echo "checked='checked'"; ?> id='<?php echo $valor['id_grupo']; ?>' data-fi="<?php echo $valor['idfi']; ?>" data-idgrup='<?php echo $valor['id_grupo']; ?>' >Inhabilitada</label>
 											</div>
 										</div>
 		                            </div>
@@ -147,105 +154,110 @@
 	var peticion = null;
 	$("#editperformanceevaluation").submit(function(e){
 		e.preventDefault();
-		swal({
-         	title: 'Confirmar acción',
-         	text : 'Si alguna fuente de información se encuentra inhabilitada, su peso deberá ser 0.<br>¿Están los pesos correctamente establecidos?',
-         	type: 'warning',
-         	showCancelButton: true,
-        	confirmButtonColor: '#22722b',
-        	cancelButtonColor: '#a0352f',
-        	confirmButtonText: 'Si, están correctos',
-        	cancelButtonText: 'No, cancelar',
-        	buttonsStyling: true
-      	}).then(function(isConfirm) {
-         	if(isConfirm === true){
-         		$("#cargando").show();
-		      	$("#save").prop("disabled", true);
-		      	var group_container = $("#main-container").children(".group-container");
-		      	var informacion     = {};
-		      	informacion['idevaluacion'] = $("#idevaluacion").val();
-		      	var fuentes = new Array();
-		      	var suma = 0;
-		      	$.each(group_container, function(k, filafi) {
-		      		var fuentesinformacion ={};
-		         	var pesofi = $(filafi).find(".pesofi").val();
-		         	suma += parseInt(pesofi);
-		         	//var idgrup = $(filafi).find("input[name=idgrup]").val();
-		         	//var estado = $(filafi).find("input[name=estado_grupo_fi_"+idgrup+"]:checked").val();
-		         	var idfi   = $(filafi).find("input[name=idfi]").val();
-		         	var gruposfi = $(filafi).find("input[type='radio']:checked");
-		         	var grupos = new Array();
-		         	$.each(gruposfi, function(index, value){
-		         		var grupo = {};
-			            grupo['grup_id'] = value.id;
-			            grupo['grup_estado'] = $(value).val();
-			            grupos.push(grupo);
-		         	});
-		         	fuentesinformacion['idfi']   = idfi;
-		         	fuentesinformacion['pesofi'] = pesofi;
-		         	fuentesinformacion['gruposfi'] = grupos;
-		         	fuentes.push(fuentesinformacion);
-		      	});
-		      	if(suma > 100){
-		      		swal({
-		             	title: 'Oops... ¡Ha ocurrido un error!',
-		             	text : 'La suma de los pesos de las fuentes de información no puede ser superior a 100%',
-		             	type: 'error',
-		             	confirmButtonColor: '#22722b',
-		             	confirmButtonText: 'OK',
-		             	buttonsStyling: true
-		            }).then(function(isConfirm){
-		            	$("#cargando").hide();
-		                $("#save").prop("disabled", false);
-		            });
-		            return false;
-		      	}
-		      	informacion['fuentes'] = fuentes;
-		      	console.log(informacion);
-		      	var empaquetadojson = JSON.stringify(informacion);
-		      	if(peticion != null)
-		            peticion.abort();
-		        peticion = $.ajax({
-		            url  : "",
-		            type : "POST",
-		            dataType: "JSON",
-		            data:{
-		               'informacion' : empaquetadojson
-		            },
-		            success: function(data){
-		               	if(data.state == "success"){
-		                  	$("#cargando").hide();
-		                  	$("#save").prop("disabled", false);
-		                  	swal({
-		                     	title: '¡Guardado con éxito!',
-		                     	text : data.message,
-		                     	type: 'success',
-		                     	showCancelButton: false,
-		                     	confirmButtonColor: '#22722b',
-		                     	confirmButtonText: 'OK',
-		                     	buttonsStyling: true
-		                  	}).then(function(isConfirm) {
-		                     	location.reload();
-		                  	});
-		               	}
-		               	else if(data.state == "error"){
-		                 	swal({
-		                     	title: 'Oops... ¡Ha ocurrido un error!',
-		                     	text : data.message,
-		                     	type: 'error',
-		                     	confirmButtonColor: '#22722b',
-		                     	confirmButtonText: 'OK',
-		                     	buttonsStyling: true
-		                  	});
-		                  	$("#cargando").hide();
-		                  	$("#save").prop("disabled", false);
-		               }
-		            },
-		            error: function(xhr, status){
-		               console.log(status);
-		            }
-		        });
-         	}
-      	});
+     	if(isConfirm === true){
+     		$("#cargando").show();
+	      	$("#save").prop("disabled", true);
+	      	var group_container = $("#main-container").children(".group-container");
+	      	var informacion     = {};
+	      	informacion['idevaluacion'] = $("#idevaluacion").val();
+	      	var fuentes = new Array();
+	      	var suma = 0;
+	      	$.each(group_container, function(k, filafi) {
+	      		var fuentesinformacion ={};
+	         	var pesofi = $(filafi).find(".pesofi").val();
+	         	suma += parseInt(pesofi);
+	         	var idfi   = $(filafi).find("input[name=idfi]").val();
+	         	var gruposfi = $(filafi).find("input[type='radio']:checked");
+	         	var grupos = new Array();
+	         	$.each(gruposfi, function(index, value){
+	         		var grupo = {};
+		            grupo['grup_id'] = value.id;
+		            grupo['grup_estado'] = $(value).val();
+		            grupos.push(grupo);
+	         	});
+	         	fuentesinformacion['idfi']   = idfi;
+	         	fuentesinformacion['pesofi'] = pesofi;
+	         	fuentesinformacion['gruposfi'] = grupos;
+	         	fuentes.push(fuentesinformacion);
+	      	});
+	      	if(suma > 100){
+	      		swal({
+	             	title: 'Oops... ¡Ha ocurrido un error!',
+	             	text : 'La suma de los pesos de las fuentes de información no puede ser superior a 100%',
+	             	type: 'error',
+	             	confirmButtonColor: '#22722b',
+	             	confirmButtonText: 'OK',
+	             	buttonsStyling: true
+	            }).then(function(isConfirm){
+	            	$("#cargando").hide();
+	                $("#save").prop("disabled", false);
+	            });
+	            return false;
+	      	}
+	      	informacion['fuentes'] = fuentes;
+	      	var empaquetadojson = JSON.stringify(informacion);
+	      	if(peticion != null)
+	            peticion.abort();
+	        peticion = $.ajax({
+	            url  : "",
+	            type : "POST",
+	            dataType: "JSON",
+	            data:{
+	               'informacion' : empaquetadojson
+	            },
+	            success: function(data){
+	               	if(data.state == "success"){
+	                  	$("#cargando").hide();
+	                  	$("#save").prop("disabled", false);
+	                  	swal({
+	                     	title: '¡Guardado con éxito!',
+	                     	text : data.message,
+	                     	type: 'success',
+	                     	showCancelButton: false,
+	                     	confirmButtonColor: '#22722b',
+	                     	confirmButtonText: 'OK',
+	                     	buttonsStyling: true
+	                  	}).then(function(isConfirm) {
+	                     	location.reload();
+	                  	});
+	               	}
+	               	else if(data.state == "error"){
+	                 	swal({
+	                     	title: 'Oops... ¡Ha ocurrido un error!',
+	                     	text : data.message,
+	                     	type: 'error',
+	                     	confirmButtonColor: '#22722b',
+	                     	confirmButtonText: 'OK',
+	                     	buttonsStyling: true
+	                  	});
+	                  	$("#cargando").hide();
+	                  	$("#save").prop("disabled", false);
+	               }
+	            },
+	            error: function(xhr, status){
+	               console.log(status);
+	            }
+	        });
+     	}
 	});
+
+	$("#main-container").delegate('.estadogrupofi' , 'click' , function(e){
+		var question_container = $(this).parent().parent().parent().parent();
+      	var grupos_fi = $(question_container).find("input[type=radio]:checked");
+      	var cantidad_total_radio = grupos_fi.length;
+      	var cantidad_falsos = 0;
+      	$.each(grupos_fi, function(index, value){
+         	if($(value).val() == "false"){
+            	cantidad_falsos ++;
+         	}
+      	});      	
+      	var fi = $(this).data("fi");
+      	if(cantidad_falsos == cantidad_total_radio){
+         	$("#peso_fi_"+fi).val("0");
+         	$("#peso_fi_"+fi).prop("disabled", true);
+      	}else{
+         	$("#peso_fi_"+fi).prop("disabled", false);
+         	$("#peso_fi_"+fi).focus();
+      	}
+   });
 </script>

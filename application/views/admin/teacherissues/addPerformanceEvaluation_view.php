@@ -200,7 +200,7 @@
                                     "</div>"; // Cierre formgroup
                                     if(fuin_permitegrupos == true){
                                        html += "<label>Seleccione los grupos que desea que contesten la evaluación</label>"+
-                                                "<div id='grupos' class='col-md-12 col-lg-12'>"+
+                                                "<div id='grupos' data-fi='"+fuin_pk+"' class='col-md-12 col-lg-12'>"+
                                                 "</div>";
                                     }
                         html +=  "</div>"+ //Cierre questionContainer
@@ -275,10 +275,10 @@
                   $.each(grupos, function (index, value){ 
                      var html =  "<div class='col-md-2'>"+
                                     "<label class='radio-inline'>"+
-                                       "<input type='radio' name='grupos["+i+"]' value='true' required='required' id='"+value.grup_id+"' checked='checked' data-materia='"+value.mate_nombre+"' data-grupo='"+value.grup_nombre+"'> Habilitar"+
+                                       "<input type='radio' class='grupos' name='grupos["+i+"]' value='true' required='required' id='"+value.grup_id+"' checked='checked' data-materia='"+value.mate_nombre+"' data-grupo='"+value.grup_nombre+"'> Habilitar"+
                                     "</label>"+
                                     "<label class='radio-inline'>"+
-                                       "<input type='radio' name='grupos["+i+"]' value='false' required='required' id='"+value.grup_id+"' data-materia='"+value.mate_nombre+"' data-grupo='"+value.grup_nombre+"'>Inhabilitar"+
+                                       "<input type='radio' class='grupos' name='grupos["+i+"]' value='false' required='required' id='"+value.grup_id+"' data-materia='"+value.mate_nombre+"' data-grupo='"+value.grup_nombre+"'>Inhabilitar"+
                                     "</label>"+
                                     //"<input class='checkboxbtn ' type='radio' id='"+value.grup_id+"' name='grupos' data-materia='"+value.mate_nombre+"' data-grupo='"+value.grup_nombre+"' />"+
                                  "</div>"+
@@ -436,6 +436,39 @@
                console.log(status);
             }
          });
+      }
+   });
+   
+   $("#main-container").delegate('.grupos' , 'click' , function(e){
+      var cantidad_total_radio = $("input[class=grupos]:checked").length;
+      var grupos_fi = $("input[class=grupos]:checked");
+      var cantidad_falsos = 0;
+      $.each(grupos_fi, function(index, value){
+         if($(value).val() == "false"){
+            cantidad_falsos ++;
+         }
+      });
+      var fi = $("#grupos").data("fi");
+      if(cantidad_falsos == cantidad_total_radio){
+         $("#peso_fi_"+fi).val("0");
+         $("#peso_fi_"+fi).data("state", "on");
+         $("#state_fi_"+fi).removeClass('label-danger label-success');
+         $("#state_fi_"+fi).addClass('label-warning');
+         $("#state_fi_"+fi).text("No se aplicará esta fuente de información.");
+         $(".pesofi").each(function(index, value){
+            var state = $(value).data('state');
+            if(state == "off"){
+               $(value).prop("disabled", false);
+            }else if(state == "on"){
+               $(value).prop("disabled", true);
+            }
+         });
+      }else{
+         $("#peso_fi_"+fi).prop("disabled", false);
+         $("#peso_fi_"+fi).data("state", "off");
+         $("#state_fi_"+fi).removeClass('label-danger label-warning ');
+         $("#state_fi_"+fi).addClass('label-success');
+         $("#state_fi_"+fi).text("Se aplicará esta fuente de información.");
       }
    });
 </script>
