@@ -154,91 +154,89 @@
 	var peticion = null;
 	$("#editperformanceevaluation").submit(function(e){
 		e.preventDefault();
-     	if(isConfirm === true){
-     		$("#cargando").show();
-	      	$("#save").prop("disabled", true);
-	      	var group_container = $("#main-container").children(".group-container");
-	      	var informacion     = {};
-	      	informacion['idevaluacion'] = $("#idevaluacion").val();
-	      	var fuentes = new Array();
-	      	var suma = 0;
-	      	$.each(group_container, function(k, filafi) {
-	      		var fuentesinformacion ={};
-	         	var pesofi = $(filafi).find(".pesofi").val();
-	         	suma += parseInt(pesofi);
-	         	var idfi   = $(filafi).find("input[name=idfi]").val();
-	         	var gruposfi = $(filafi).find("input[type='radio']:checked");
-	         	var grupos = new Array();
-	         	$.each(gruposfi, function(index, value){
-	         		var grupo = {};
-		            grupo['grup_id'] = value.id;
-		            grupo['grup_estado'] = $(value).val();
-		            grupos.push(grupo);
-	         	});
-	         	fuentesinformacion['idfi']   = idfi;
-	         	fuentesinformacion['pesofi'] = pesofi;
-	         	fuentesinformacion['gruposfi'] = grupos;
-	         	fuentes.push(fuentesinformacion);
-	      	});
-	      	if(suma > 100){
-	      		swal({
-	             	title: 'Oops... ¡Ha ocurrido un error!',
-	             	text : 'La suma de los pesos de las fuentes de información no puede ser superior a 100%',
-	             	type: 'error',
-	             	confirmButtonColor: '#22722b',
-	             	confirmButtonText: 'OK',
-	             	buttonsStyling: true
-	            }).then(function(isConfirm){
-	            	$("#cargando").hide();
-	                $("#save").prop("disabled", false);
-	            });
-	            return false;
-	      	}
-	      	informacion['fuentes'] = fuentes;
-	      	var empaquetadojson = JSON.stringify(informacion);
-	      	if(peticion != null)
-	            peticion.abort();
-	        peticion = $.ajax({
-	            url  : "",
-	            type : "POST",
-	            dataType: "JSON",
-	            data:{
-	               'informacion' : empaquetadojson
-	            },
-	            success: function(data){
-	               	if(data.state == "success"){
-	                  	$("#cargando").hide();
-	                  	$("#save").prop("disabled", false);
-	                  	swal({
-	                     	title: '¡Guardado con éxito!',
-	                     	text : data.message,
-	                     	type: 'success',
-	                     	showCancelButton: false,
-	                     	confirmButtonColor: '#22722b',
-	                     	confirmButtonText: 'OK',
-	                     	buttonsStyling: true
-	                  	}).then(function(isConfirm) {
-	                     	location.reload();
-	                  	});
-	               	}
-	               	else if(data.state == "error"){
-	                 	swal({
-	                     	title: 'Oops... ¡Ha ocurrido un error!',
-	                     	text : data.message,
-	                     	type: 'error',
-	                     	confirmButtonColor: '#22722b',
-	                     	confirmButtonText: 'OK',
-	                     	buttonsStyling: true
-	                  	});
-	                  	$("#cargando").hide();
-	                  	$("#save").prop("disabled", false);
-	               }
-	            },
-	            error: function(xhr, status){
-	               console.log(status);
-	            }
-	        });
-     	}
+		$("#cargando").show();
+      	$("#save").prop("disabled", true);
+      	var group_container = $("#main-container").children(".group-container");
+      	var informacion     = {};
+      	informacion['idevaluacion'] = $("#idevaluacion").val();
+      	var fuentes = new Array();
+      	var suma = 0;
+      	$.each(group_container, function(k, filafi) {
+      		var fuentesinformacion ={};
+         	var pesofi = $(filafi).find(".pesofi").val();
+         	suma += parseInt(pesofi);
+         	var idfi   = $(filafi).find("input[name=idfi]").val();
+         	var gruposfi = $(filafi).find("input[type='radio']:checked");
+         	var grupos = new Array();
+         	$.each(gruposfi, function(index, value){
+         		var grupo = {};
+	            grupo['grup_id'] = value.id;
+	            grupo['grup_estado'] = $(value).val();
+	            grupos.push(grupo);
+         	});
+         	fuentesinformacion['idfi']   = idfi;
+         	fuentesinformacion['pesofi'] = pesofi;
+         	fuentesinformacion['gruposfi'] = grupos;
+         	fuentes.push(fuentesinformacion);
+      	});
+      	if(suma > 100){
+      		swal({
+             	title: 'Oops... ¡Ha ocurrido un error!',
+             	text : 'La suma de los pesos de las fuentes de información no puede ser superior a 100%',
+             	type: 'error',
+             	confirmButtonColor: '#22722b',
+             	confirmButtonText: 'OK',
+             	buttonsStyling: true
+            }).then(function(isConfirm){
+            	$("#cargando").hide();
+                $("#save").prop("disabled", false);
+            });
+            return false;
+      	}
+      	informacion['fuentes'] = fuentes;
+      	var empaquetadojson = JSON.stringify(informacion);
+      	if(peticion != null)
+            peticion.abort();
+        peticion = $.ajax({
+            url  : "",
+            type : "POST",
+            dataType: "JSON",
+            data:{
+               'informacion' : empaquetadojson
+            },
+            success: function(data){
+               	if(data.state == "success"){
+                  	$("#cargando").hide();
+                  	$("#save").prop("disabled", false);
+                  	swal({
+                     	title: '¡Guardado con éxito!',
+                     	text : data.message,
+                     	type: 'success',
+                     	showCancelButton: false,
+                     	confirmButtonColor: '#22722b',
+                     	confirmButtonText: 'OK',
+                     	buttonsStyling: true
+                  	}).then(function(isConfirm) {
+                     	location.reload();
+                  	});
+               	}
+               	else if(data.state == "error"){
+                 	swal({
+                     	title: 'Oops... ¡Ha ocurrido un error!',
+                     	text : data.message,
+                     	type: 'error',
+                     	confirmButtonColor: '#22722b',
+                     	confirmButtonText: 'OK',
+                     	buttonsStyling: true
+                  	});
+                  	$("#cargando").hide();
+                  	$("#save").prop("disabled", false);
+               }
+            },
+            error: function(xhr, status){
+               console.log(status);
+            }
+        });
 	});
 
 	$("#main-container").delegate('.estadogrupofi' , 'click' , function(e){
