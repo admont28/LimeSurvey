@@ -4570,16 +4570,25 @@ class statistics_helper {
     /**
      * Función que permite generar las estadísticas para las evaluaciones de docente.
      * Dado por el acuerdo 109 del 24 de Octubre de 1996 Armenia.
-     * @param  ind $surveyid Identificador único de la encuesta
+     * @param  ind $performanceevaluationid Identificador único de la encuesta
      * @param  string $language Lenguaje de la encuesta, por defecto: es (español)
      * @return PDF           Retorna el pdf con las estadísticas de la evaluación docente.
      */
-    public function generate_statistics_teacher_evaluation($surveyid, $language = "es"){
+    public function generate_results_performance_evaluation($performanceevaluationid, $evaluado, $language = "es"){
         /*
          * ------------------------------------------------------------------------------------
          * CONSTRUCCIÓN DEL DOCUMENTO PDF, CABECERAS Y CONFIGURACIONES ADICIONALES
          * ------------------------------------------------------------------------------------
          */
+        $evaluacionDesempeno = EvaluacionDesempeno::model()->findByPk($performanceevaluationid);
+        $criteria = new CDbCriteria;
+        $criteria->addCondition("evde_edfi_fk = :evde_pk");
+        $criteria->select = 'fuin_edfi_fk';
+        $criteria->distinct = true;
+        $criteria->params = array(':evde_pk' => $evaluacionDesempeno->evde_pk);
+        $criteria->order = 'fuin_edfi_fk ASC';
+        $edfi = EvaluacionDesempenoFuenteInformacion::model()->findAll($criteria);
+        
         /*
          * Se importan las librerías y los helpers para crear pdf
          */
@@ -4589,14 +4598,14 @@ class statistics_helper {
         // Se crea un nuevo documento pdf
         $this->pdf = new pdf();
 
-        $surveyInfo = getSurveyInfo($surveyid,$language);
+        
 
         // set document information
         $this->pdf->SetCreator(PDF_CREATOR);
         $this->pdf->SetAuthor('GESENUQ');
-        $this->pdf->SetTitle(sprintf("Evaluación docente %s",$surveyid));
-        $this->pdf->SetSubject($surveyInfo['surveyls_title']);
-        $this->pdf->SetKeywords('GESEN-UQ, LimeSurvey,'.gT("Statistics").', '.sprintf(gT("Survey %s"),$surveyid));
+        $this->pdf->SetTitle(sprintf("Evaluación de desempeño ID: %s",$evaluacionDesempeno->evde_identificacionevaluado));
+        //$this->pdf->SetSubject($surveyInfo['surveyls_title']);
+        $this->pdf->SetKeywords('GESEN-UQ, resultados evaluacion desempeño');
         $this->pdf->SetDisplayMode('fullpage', 'one');
         $this->pdf->setLanguageArray($aPdfLanguageSettings['lg']);
 
@@ -4609,7 +4618,10 @@ class statistics_helper {
         //$headerlogo = '$this->pdf';
         //$headerlogo = 'LOGO-UQ.png';
         $headerlogo = "";
-        $this->pdf->SetHeaderData("LOGO-UQ-HEADER.png", 15, "Resultados evaluación docente" , "Evaluación docente (ID:".$surveyid.") '".flattenText($surveyInfo['surveyls_title'],false,true,'UTF-8')."'");
+        $fecha_actual = date("Y-m-d");
+        $facultad = (isset($evaluado->nombrefacultad)) ? " Facultad: ".$evaluado->nombrefacultad : "";
+        $this->pdf->SetHeaderData("LOGO-UQ-HEADER.png", 15, "Resultados evaluación de desempeño" , "Nombre completo: ".$evaluado->nombrecompleto." Identificación: ".$evaluado->identificacionevaluado."\nDependencia: ".$evaluado->nombredependencia.$facultad."\nPeriodo evaluación: ".$evaluado->periodoevaluacion." Fecha de reporte: ".$fecha_actual);
+        //$this->pdf->SetHeaderData("LOGO-UQ-HEADER.png", 15, "Resultados evaluación de desempeño" , "Identificación evaluado (ID:".$surveyid.") '".flattenText($surveyInfo['surveyls_title'],false,true,'UTF-8')."'");
         $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], '', $aPdfLanguageSettings['pdffontsize']);
         // set default monospaced font
         $this->pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
@@ -4619,94 +4631,616 @@ class statistics_helper {
          * GENERADOR DE RESULTADOS
          * ----------------------------------------------------------------------------------------
          */
-        // Se cuenta el numero total de respuestas.
-        $query_total_answers = "SELECT count(*) FROM {{survey_$surveyid}}";
-        $total_answers = Yii::app()->db->createCommand($query_total_answers)->queryScalar();
-        if(isset($total_answers) && $total_answers) 
-        {
-            $array = array(
-                    array("Número total de respuestas de esta evaluación", $total_answers),
-                );
-        }
-        $fecha_actual = date("Y-m-d");
-        $this->pdf->AddPage('P', ' A4');
-        $this->pdf->Bookmark("Evaluación Docente", 0, 0);
-        $this->pdf->titleintopdf("Resultados evaluación docente (ID: ".$surveyid." ) - fecha de reporte: ".$fecha_actual);
-        $this->pdf->tableintopdf($array);
-
-        /*
-         * Respuestas
-         */
-        // Cabecera de la tabla
-        $headPDF[] = array("#","Pregunta", "Promedio");
-        // Contenido de la tabla
-        $tablePDF = array();
-
-        /*
-         * Obtengo todos los qid de la encuesta.
-         */
-        $query_qids_survey = "SELECT qid,gid,question FROM QUESTIONS WHERE sid =".$surveyid." AND type = 'L' ORDER BY question_order ASC";
-        $result_query_qids_survey = Yii::app()->db->createCommand($query_qids_survey)->query();
-        $query_survey_answers = "SELECT * FROM {{survey_$surveyid}}";
-        $result_query_survey_answers = Yii::app()->db->createCommand($query_survey_answers)->queryAll();
-        //Yii::trace(CVarDumper::dumpAsString($result_query_survey_answers), 'vardump');
-        $answers = array();
-        $sum_total = 0;
-        $j = 1;
-        foreach ($result_query_qids_survey as $q => $valueq) {
-                // $valueq['qid'] obtengo el qid
-                // $valueq['gid'] obtengo el id del grupo
-                $gid = $valueq['gid'];
-                $qid = $valueq['qid'];
-                // Obtengo el nombre de la columna que contiene las respuestas a cada una de las preguntas
-                $column = $surveyid."X".$gid."X".$qid;
-                $query_code_answ = "SELECT code FROM ANSWERS WHERE qid=".$qid;
-                $result_query_code_answ = Yii::app()->db->createCommand($query_code_answ)->queryAll();
-                $answer_question = array();
-                $sum = 0;
-                for ($i=0; $i < sizeof($result_query_code_answ); $i++) { 
-                
-                    // Obtengo el codigo de la pregunta
-                    $code_answ = $result_query_code_answ[$i]['code'];
-                    // Creo la consulta para contar la cantidad de veces que se selecciona una respuesta.
-                    $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE \"$column\" = '$code_answ' ";
-                    // Obtengo el número de la consulta anterior
-                    $result = Yii::app()->db->createCommand($query)->queryScalar();
-                    $answer['code'] = $code_answ;
-                    $answer['count'] = $result;
-                    // Calculo el valor final dado los pesos de las respuestas.
-                    if($i == 0){
-                        $answer['final_value'] = $answer['count'] * 5;
-                    }else if($i == 1){
-                        $answer['final_value'] = $answer['count'] * 3;
-                    }else if($i == 2){
-                        $answer['final_value'] = $answer['count'];
+        $promedios_finales_fi = array(); 
+        foreach ($edfi as $row) {
+            $fi2 = FuenteInformacion::model()->findByPk($row->fuin_edfi_fk);
+            $criteria = new CDbCriteria;
+            $criteria->addCondition("fuin_edfi_fk = :fuin_pk AND evde_edfi_fk = :evde_pk");
+            $criteria->params = array(':fuin_pk' => $row->fuin_edfi_fk, ":evde_pk" => $evaluacionDesempeno->evde_pk);
+            $criteria->order = 'fuin_edfi_fk ASC';
+            $edfi2 = EvaluacionDesempenoFuenteInformacion::model()->findAll($criteria);
+            $respuestas_por_grupo = array();
+            // VERIFICO SI EL TAMAÑO DE EVALUACIONDESEMPENOFUENTEINFORMACIÓN ES MAYOR QUE 1 ES PORQUE VIENEN VARIOS GRUPOS, ES CUANDO SE TRATA DE FUENTES DE INFORMACIÓN DE ESTUDIANTE.
+            $almenosungrupohabilitado = false;
+            $promedio_fi = array();
+            if(sizeof($edfi2) > 1){
+                $almenosungrupohabilitado = $this->_verificar_grupos_habilitados($edfi2);
+                if($almenosungrupohabilitado){
+                    $this->pdf->AddPage('P', ' A4');
+                    $this->pdf->Bookmark("Fuente: ".$fi2->fuin_nombre, 0, 0);
+                    $this->pdf->titleintopdf("Resultados fuente de información: ".$fi2->fuin_nombre);
+                    $promedio_fi["fuin_nombre"] = $fi2->fuin_nombre;
+                    $promedio_fi["fuin_pk"] = $fi2->fuin_pk;
+                }
+                $total_answers = 0;
+                $total_respuestas_incompletas = 0;
+                // FOREACH USADO PARA SUMAR LAS RESPUESTAS COMPLETAS E INCOMPLETAS DE TODOS LOS GRUPOS DE LA FUENTE DE INFORMACIÓN
+                foreach ($edfi2 as $row2) {
+                    $fi = FuenteInformacion::model()->findByPk($row2->fuin_edfi_fk);
+                    $grupo = Grupo::model()->findByPk($row2->grup_edfi_fk);
+                    //Yii::trace(CVarDumper::dumpAsString($fi), 'vardump');die();
+                    if(!is_null($grupo) && !is_null($fi) ){
+                        if(tableExists("survey_".$grupo->surv_grup_fk)){
+                            if($grupo->grup_estado){
+                                $surveyid = $grupo->surv_grup_fk;
+                                $surveyInfo = getSurveyInfo($surveyid,$language);
+                                // Se cuenta el numero total de respuestas.
+                                $query_total_answers = "SELECT count(*) FROM {{survey_$surveyid}} WHERE ".Yii::app()->db->quoteColumnName("submitdate")." IS NOT NULL";
+                                $cantidad_respuestas = Yii::app()->db->createCommand($query_total_answers)->queryScalar();
+                                $respuestas_por_grupo[] = $cantidad_respuestas;
+                                $total_answers += $cantidad_respuestas;
+                                $respuestas_incompletas = "SELECT count(*) FROM {{survey_$surveyid}} WHERE ".Yii::app()->db->quoteColumnName("submitdate")." IS NULL";
+                                $total_respuestas_incompletas += Yii::app()->db->createCommand($respuestas_incompletas)->queryScalar();
+                            }else{
+                                //$array = array(
+                                    //array("Estado de la fuente de información o grupo inhabilitado. Encuesta (ID: ".$grupo->surv_grup_fk.")"),
+                                //);
+                                //$this->pdf->tableintopdf($array);
+                            }
+                        }else{
+                            $array = array(
+                                    array("Encuesta (ID: ".$grupo->surv_grup_fk.") no activada."),
+                                );
+                            $this->pdf->tableintopdf($array);
+                        }
+                    }// END IF !IS_NULL($GRUPO)
+                    else
+                    {
+                        $array = array(
+                                    array("Grupo o fuente de información nulos"),
+                                );
+                        $this->pdf->tableintopdf($array);
                     }
-                    // Realizo la suma de los valores finales para luego hacer el promedio.
-                    $sum = $sum + $answer['final_value'];
-                    $answer_question[] = $answer;
-                } // Close for
-                $answer_question['average'] = sprintf("%01.2f", $sum / $total_answers);
-                $sum_total = $sum_total + $answer_question['average'];
-                $tablePDF[] = array($j,$valueq['question'], $answer_question['average']);
-                $answers[] = $answer_question;
-                $j++;
-            //Yii::trace(CVarDumper::dumpAsString($value), 'vardump');
-        } // Close foreach
-        //$oldStyle = $this->pdf->FontStyle;
-        
-        $tablePDF[] = array("--","PROMEDIO TOTAL", sprintf("%01.2f", $sum_total/sizeof($result_query_qids_survey)));
-       
-       
+                } // END FOREACH EDFI2
+                // MUESTRO LOS TOTALES CALCULADOS EN EL FOREACH DE ARRIBA.
+                if(isset($total_answers,$total_respuestas_incompletas) && $almenosungrupohabilitado){
+                    $array = array(
+                            array("Número total de respuestas completas de esta evaluación (suma de todos los grupos habilitados)", $total_answers),
+                            array("Número total de respuestas incompletas de esta evaluación (suma de todos los grupos habilitados)", $total_respuestas_incompletas),
+                        );
+                    $this->pdf->tableintopdf($array);
+                }
+                $cabecera = array();
+                $cabecera[] = "#";
+                $cabecera[] = "Pregunta";
+                $fila_tabla = array();
+                $tabla_general = array();
+                $tablePDF = array();
+                $thead = '';
+                $tbody = '';
+                $haconstruidopreguntas = false;
+                // FOREACH USADO PARA RECOLECTAR LOS NOMBRES DE LAS PREGUNTAS DE CADA FUENTE DE INFORMACIÓN.
+                foreach ($edfi2 as $row2) {
+                    $fi = FuenteInformacion::model()->findByPk($row2->fuin_edfi_fk);
+                    $grupo = Grupo::model()->findByPk($row2->grup_edfi_fk);
+                    //Yii::trace(CVarDumper::dumpAsString($fi), 'vardump');die();
+                    if(!is_null($grupo) && !is_null($fi) ){
+                        if(tableExists("survey_".$grupo->surv_grup_fk)){
+                            if($grupo->grup_estado){
+                                $surveyid = $grupo->surv_grup_fk;
+                                $surveyInfo = getSurveyInfo($surveyid,$language);
+                                if(isset($total_answers) && $total_answers > 0 && isset($respuestas_incompletas)){
+                                    $query_qids_survey = "SELECT qid,gid,question FROM QUESTIONS WHERE sid =".$surveyid." AND type = 'L' ORDER BY question_order ASC";
+                                    $result_query_qids_survey = Yii::app()->db->createCommand($query_qids_survey)->query();
+                                    $j = 1;
+                                    foreach ($result_query_qids_survey as $q => $valueq) {
+                                        $fila_tabla = array();
+                                        $gid = $valueq['gid'];
+                                        $qid = $valueq['qid'];
+                                        $fila_tabla[] = $j;
+                                        $fila_tabla[] = $valueq['question'];
+                                        $tablePDF[] = $fila_tabla;
+                                        $j++;
+                                        $haconstruidopreguntas = true;
+                                    } // Close foreach
+                                    //$tabla[] = array("--","PROMEDIO TOTAL", sprintf("%01.2f", $sum_total/sizeof($result_query_qids_survey)));
 
-        // Incrusto la tabla con los valores obtenidos.
-        $this->pdf->headTable($headPDF,$tablePDF);
-        $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], 'B', $aPdfLanguageSettings['pdffontsize']);
-        $this->pdf->tableintopdf( array(array("","PROMEDIO TOTAL", sprintf("%01.2f", $sum_total/sizeof($result_query_qids_survey)))));
-        $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], '', $aPdfLanguageSettings['pdffontsize']);
+                                }elseif (isset($total_answers) && $total_answers == 0) {
+                                    $array = array(
+                                            array("Número total de respuestas de esta evaluación", $total_answers),
+                                        );
+                                    $this->pdf->tableintopdf($array);
+                                }
+                            }else{
+                                //$array = array(
+                                    //array("Estado de la fuente de información o grupo inhabilitado. Encuesta (ID: ".$grupo->surv_grup_fk.")"),
+                                //);
+                                //$this->pdf->tableintopdf($array);
+                            }
+                        }else{
+                            $array = array(
+                                    array("Encuesta (ID: ".$grupo->surv_grup_fk.") no activada."),
+                                );
+                            $this->pdf->tableintopdf($array);
+                        }
+                    }// END IF !IS_NULL($GRUPO)
+                    else
+                    {
+                        $array = array(
+                                    array("Grupo o fuente de información nulos"),
+                                );
+                        $this->pdf->tableintopdf($array);
+                    }
+                    // Si ya construir el array con las preguntas de la tabla, lo saco del foreach para que no se vaya a construir algo que ya está, si no sea ha construido, continua el foreach hasta que se construyan las preguntas.
+                    if($haconstruidopreguntas)
+                        break;
+                } // END FOREACH EDFI2
+                $numero_asignatura = 1;
+                // Arreglo que contendrá los promedios finales de cada grupo de encuestados.
+                $promedio_grupo = array();
+                // Arreglo que contendrá los nombres de los grupos de encuestados (asignaturas).
+                $nombres_grupos = array();
+                /*
+                 * Obtengo las informaciones adicionales del grupo de la fuente de información, 0 o varias.
+                 */
+                $criteria = new CDbCriteria();
+                $criteria->addCondition("fuin_inad_fk = :fuin_pk");
+                $criteria->params = array(":fuin_pk" => $fi2->fuin_pk);
+                $informacion_adicional = InformacionAdicional::model()->findAll($criteria);
+                $promedios_informaciones_adicionales = array();
+                foreach ($informacion_adicional as $ia) {
+                    $promedio_informacion_adicional = array();
+                    $promedio_informacion_adicional['inad_pk'] = $ia->inad_pk;
+                    $promedio_informacion_adicional['inad_nombre'] = $ia->inad_nombre;
+                    $promedio_informacion_adicional['inad_grupos'] = array();
+                    // Consulto todas las preguntas de la información adicional.
+                    $criteria = new CDbCriteria();
+                    $criteria->addCondition("inad_inap_fk = :inad_pk");
+                    $criteria->params = array(":inad_pk" => $ia->inad_pk);
+                    $iaps = InformacionAdicionalPregunta::model()->findAll($criteria);
+                    $promedio_informacion_adicional['inad_cantidad'] = count($iaps);
+                    $promedios_informaciones_adicionales[] = $promedio_informacion_adicional;
+                }
+                // FOR EACH USADO PARA CONSTRUIR LOS PROMEDIOS DE LAS PREGUNTAS DE CADA GRUPO POR COLUMNA
+                $suma_grupos = array();
+                $indice_grupo = 0;
+                foreach ($edfi2 as $row2) {
+                    $fi = FuenteInformacion::model()->findByPk($row2->fuin_edfi_fk);
+                    $grupo = Grupo::model()->findByPk($row2->grup_edfi_fk);
+                    if(!is_null($grupo) && !is_null($fi) ){
+                        if(tableExists("survey_".$grupo->surv_grup_fk)){
+                            if($grupo->grup_estado){
+                                $surveyid = $grupo->surv_grup_fk;
+                                $surveyInfo = getSurveyInfo($surveyid,$language);
+                                // Se cuenta el numero total de respuestas.
+                                $query_total_answers = "SELECT count(*) FROM {{survey_$surveyid}} WHERE ".Yii::app()->db->quoteColumnName("submitdate")." IS NOT NULL";
+                                $total_answers_group = Yii::app()->db->createCommand($query_total_answers)->queryScalar();
+                                if(isset($total_answers_group) && $total_answers_group > 0 ){
+                                    $cabecera[] = "Asig. ".$numero_asignatura;
+                                    $nombres_grupos[] = $grupo->grup_nombre;
+                                    $thead .= '<th style="font-weight: bold;" >Asig. '.$numero_asignatura.'</th>';
+                                    $query_qids_survey = "SELECT qid,gid,question,title FROM QUESTIONS WHERE sid =".$surveyid." AND type = 'L' ORDER BY question_order ASC";
+                                    $result_query_qids_survey = Yii::app()->db->createCommand($query_qids_survey)->query();
+                                    //$query_survey_answers = "SELECT * FROM {{survey_$surveyid}} WHERE ".Yii::app()->db->quoteColumnName("submitdate")." IS NOT NULL";
+                                    //$result_query_survey_answers = Yii::app()->db->createCommand($query_survey_answers)->queryAll();
+                                    $answers = array();
+                                    $sum_total = 0;
+                                    $j = 1;
+                                    $col = 0;
+                                    $suma_grupos[$indice_grupo] = 0;
+                                    $indice = 0;
+                                    foreach ($informacion_adicional as $ia) {
+                                        $promedios_informaciones_adicionales[$indice]['inad_grupos'][$indice_grupo] = 0;
+                                        $indice++;
+                                    }
+                                    foreach ($result_query_qids_survey as $q => $valueq) {
+                                            $gid = $valueq['gid'];
+                                            $qid = $valueq['qid'];
+                                            $title_pregunta_encuesta_clonada = $valueq['title'];
+                                            // Obtengo el nombre de la columna que contiene las respuestas a cada una de las preguntas
+                                            $column = $surveyid."X".$gid."X".$qid;
+                                            $query_code_answ = "SELECT code FROM ANSWERS WHERE qid=".$qid;
+                                            $result_query_code_answ = Yii::app()->db->createCommand($query_code_answ)->queryAll();
+                                            $answer_question = array();
+                                            $sum = 0;
+                                            for ($i=0; $i < sizeof($result_query_code_answ); $i++) { 
+                                                // Obtengo el codigo de la pregunta
+                                                $code_answ = $result_query_code_answ[$i]['code'];
+                                                // Creo la consulta para contar la cantidad de veces que se selecciona una respuesta.
+                                                $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE \"$column\" = '$code_answ' AND ".Yii::app()->db->quoteColumnName("submitdate")." IS NOT NULL";;
+                                                // Obtengo el número de la consulta anterior
+                                                $result = Yii::app()->db->createCommand($query)->queryScalar();
+                                                $answer['code'] = $code_answ;
+                                                $answer['count'] = $result;
+                                                $multiplica = stristr($code_answ, '_');
+                                                $multiplica = (int)substr($multiplica, 1);
+                                                $answer['final_value'] = $answer['count'] * $multiplica;
+                                                // Realizo la suma de los valores finales para luego hacer el promedio.
+                                                $sum = $sum + $answer['final_value'];
+                                                $answer_question[] = $answer;
+                                            } // Close for
+                                            $answer_question['average'] = sprintf("%01.2f", $sum / $total_answers_group);
+                                            $tablePDF[$col][] = $answer_question['average'];
+                                            $sum_total = $sum_total + $answer_question['average'];
+                                            $answers[] = $answer_question;
+                                            $j++;
+                                            $col++;
+                                            $indice = 0;
+                                            foreach ($informacion_adicional as $ia) {
+                                                // Consulto todas las preguntas de la información adicional.
+                                                $criteria = new CDbCriteria();
+                                                $criteria->addCondition("inad_inap_fk = :inad_pk");
+                                                $criteria->params = array(":inad_pk" => $ia->inad_pk);
+                                                $iaps = InformacionAdicionalPregunta::model()->findAll($criteria);
+                                                foreach ($iaps as $iap) {
+                                                    $pregunta_encuesta_estructura = Yii::app()->db->createCommand("SELECT qid,gid,question,title FROM QUESTIONS WHERE qid=".$iap->ques_inap_fk)->queryRow();
+                                                    if($title_pregunta_encuesta_clonada == $pregunta_encuesta_estructura['title']){
+                                                        $promedios_informaciones_adicionales[$indice]['inad_grupos'][$indice_grupo] += $answer_question['average'];
+                                                        break;
+                                                    }
+                                                }
+                                                $indice++;
+                                            }
+                                    } // Close foreach
+                                    $numero_asignatura++;
+                                    $promedio_grupo[] = $sum_total/sizeof($result_query_qids_survey);
+                                    $indice_grupo++;
+                                }elseif (isset($total_answers_group) && $total_answers == 0) {
+                                    $array = array(
+                                            array("Número total de respuestas de esta evaluación", $total_answers_group),
+                                        );
+                                    $this->pdf->tableintopdf($array);
+                                }
+                            }else{
+                                //$array = array(
+                                    //array("Estado de la fuente de información o grupo inhabilitado. Encuesta (ID: ".$grupo->surv_grup_fk.")"),
+                                //);
+                                //$this->pdf->tableintopdf($array);
+                            }
+                        }else{
+                            $array = array(
+                                    array("Encuesta (ID: ".$grupo->surv_grup_fk.") no activada."),
+                                );
+                            $this->pdf->tableintopdf($array);
+                        }
+                    }// END IF !IS_NULL($GRUPO)
+                    else
+                    {
+                        $array = array(
+                                    array("Grupo o fuente de información nulos"),
+                                );
+                        $this->pdf->tableintopdf($array);
+                    }
+                } // END FOREACH EDFI2
+                // END FOREACH PARA CONSTRUIR LOS PROMEDIOS DE LAS PREGUNTAS DE CADA GRUPO POR COLUMNA
+                if($almenosungrupohabilitado){
+                    $cabecera[] = "Prom";
+                    $headPDF = array();
+                    $headPDF[] = $cabecera;
+                    $cont = 1;
+                    $promedios_fila = 0;
+                    foreach ($tablePDF as $key => $value) {
+                        if($cont % 2 == 0)
+                            $tbody .= '<tr style="background-color: #E6E6E6;">';
+                        else
+                            $tbody .= '<tr>';
+                        $posicion_td = 1;
+                        $suma_fila = 0;
+                        foreach ($value as $key => $value) {
+                            if($posicion_td > 2 ){
+                                $suma_fila += (double)$value;
+                            }
+                            if($posicion_td == 1)
+                                $tbody .= '<td > '.$value.'</td>';
+                            else
+                                $tbody .= '<td >'.$value.'</td>';
+                            $posicion_td++;
+                        }
+                        $promedio_fila = sprintf("%01.2f", $suma_fila/($numero_asignatura - 1));
+                        $promedios_fila += $promedio_fila;
+                        $tbody .= '<td>'.$promedio_fila.'</td>';
+                        $tbody .= '</tr>';
+                        $cont++;
+                    }
+                    $ultimas_filas = '<tr> <td colspan="2" style="font-weight: bold;"> Número total de respuestas </td>';
+                    foreach ($respuestas_por_grupo as $key => $value) {
+                        $ultimas_filas .= '<td style="font-weight: bold;">'.$value.'</td>';
+                    }
+                    $ultimas_filas .= '<td style="font-weight: bold;">'.$total_answers.'</td>';
+                    $ultimas_filas .= '</tr>';
+                    $ultimas_filas .= '<tr> <td colspan="2" style="font-weight: bold;"> Promedios</td>';
+                    foreach ($promedio_grupo as $key => $value) {
+                        $ultimas_filas .= '<td style="font-weight: bold;">'.sprintf("%01.2f", $value).'</td>';
+                    }
+                    $promedio_total = (double)($promedios_fila/sizeof($result_query_qids_survey));
+                    $promedio_fi["fuin_promediototal"] = $promedio_total;
+                    $ultimas_filas .= '<td style="font-weight: bold;">'.sprintf("%01.2f", $promedio_total).'</td>';
+                    $ultimas_filas .= '</tr>';
+                    $tabla = '<table class="table table-striped" cellpadding="2" width="100%">'.
+                                '<thead>'.
+                                    '<tr style="background-color: #BDBDBD;">'.
+                                        '<th style="font-weight: bold;" > #</th>'.
+                                        '<th style="font-weight: bold;" >Pregunta</th>'.
+                                        $thead.
+                                        '<th style="font-weight: bold;">Prom</th>'.
+                                    '</tr>'.
+                                '</thead>'.
+                                $tbody.
+                                $ultimas_filas.
+                            '</table>';
+                    //$tablePDF[] = $tabla_general;
+                    // Incrusto la tabla con los valores obtenidos.
+                    //Yii::trace(CVarDumper::dumpAsString($tabla), 'vardump');die();
+                    $this->pdf->writeHTML($tabla, true, false, false, false, '');
+                    //$this->pdf->headTable($headPDF,$tablePDF);
+                    $headPDF2 = array();
+                    $bodyPDF2 = array();
+                    $fila_cabecera = array();
+                    $fila_cabecera[] = 'Información adicional';
+                    $impreso_cabecera = false;
+
+                    foreach ($promedios_informaciones_adicionales as $llave1 => $valor1) {
+                        $fila_tabla = array();
+                        $fila_tabla[] = $valor1['inad_nombre'];
+                        $indice = 0;
+                        foreach ($valor1['inad_grupos'] as $llave2 => $valor2) {
+                            if(!$impreso_cabecera){
+                                $fila_cabecera[] = "Asig. ".($indice+1);
+                            }
+                           $promedio = ($valor1['inad_cantidad'] > 0 ) ? sprintf("%01.2f", $valor2 / $valor1['inad_cantidad']) : "SIN PREGUNTAS ASOCIADAS";
+                           $fila_tabla[] = $promedio;
+                           $indice++;
+                        }
+                        $impreso_cabecera = true;
+                        $bodyPDF2[] = $fila_tabla;
+                    }
+                    $headPDF2[] = $fila_cabecera;
+
+                    $this->pdf->headTable($headPDF2,$bodyPDF2);
+
+                    // Poner siguiente texto en negrita
+                    $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], 'B', $aPdfLanguageSettings['pdffontsize']);
+                    $resultado_cualitativo = "SELECT recu_nombre FROM resultadocualitativo WHERE ".$promedio_total.">= recu_valorinicio AND ".$promedio_total." <= recu_valorfin";
+                    $result_resultado_cualitativo = Yii::app()->db->createCommand($resultado_cualitativo)->queryRow();
+                    $this->pdf->Write(5, "RESULTADO CUANTITATIVO DE LA FUENTE DE INFORMACIÓN: ".sprintf("%01.2f", $promedio_total), '', 0, '', true, 0, false, false, 0);
+                    $this->pdf->Write(5, "RESULTADO CUALITATIVO DE LA FUENTE DE INFORMACIÓN: ".$result_resultado_cualitativo['recu_nombre'], '', 0, '', true, 0, false, false, 0);
+                    $resultado_cualitativo = "SELECT * FROM resultadocualitativo";
+                    $result_resultado_cualitativo = Yii::app()->db->createCommand($resultado_cualitativo)->queryAll();
+                    $this->pdf->Write(5, "Escala:", '', 0, '', true, 0, false, false, 0);
+                    // Quitar negrita para el siguiente texto
+                    $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], '', $aPdfLanguageSettings['pdffontsize']);
+                    foreach ($result_resultado_cualitativo as $key => $value) {
+                        //Write($h, $txt, $link='', $fill=0, $align='', $ln=false, $stretch=0, $firstline=false, $firstblock=false, $maxh=0)
+                        $this->pdf->Write(5, "".sprintf("%01.2f", $value['recu_valorinicio'])." a ".sprintf("%01.2f", $value['recu_valorfin']).": ".$value['recu_nombre'], '', 0, '', true, 0, false, false, 0);
+                    }
+                    // Poner siguiente texto en negrita
+                    $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], 'B', $aPdfLanguageSettings['pdffontsize']);
+                    $this->pdf->Write(5, "Asignaturas:", '', 0, '', true, 0, false, false, 0);
+                    // Quitar negrita para el siguiente texto
+                    $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], '', $aPdfLanguageSettings['pdffontsize']);
+                    foreach ($nombres_grupos as $key => $value) {
+                        $indice = $key+1;
+                        //Write($h, $txt, $link='', $fill=0, $align='', $ln=false, $stretch=0, $firstline=false, $firstblock=false, $maxh=0)
+                        $this->pdf->Write(5, "Asig. ".$indice.": ".$value, '', 0, '', true, 0, false, false, 0);
+                    }
+                }  
+            }else{
+                foreach ($edfi2 as $row2) {
+                    $fi = FuenteInformacion::model()->findByPk($row2->fuin_edfi_fk);
+                    $grupo = Grupo::model()->findByPk($row2->grup_edfi_fk);
+                    //Yii::trace(CVarDumper::dumpAsString($fi), 'vardump');die();
+                    if(!is_null($grupo) && !is_null($fi) ){
+                        if(tableExists("survey_".$grupo->surv_grup_fk)){
+                            if($grupo->grup_estado){
+                                $this->pdf->AddPage('P', ' A4');
+                                $this->pdf->Bookmark("Fuente: ".$fi2->fuin_nombre, 0, 0);
+                                $this->pdf->titleintopdf("Resultados fuente de información: ".$fi2->fuin_nombre);
+                                $promedio_fi["fuin_nombre"] = $fi2->fuin_nombre;
+                                $promedio_fi["fuin_pk"] = $fi2->fuin_pk;
+                                $surveyid = $grupo->surv_grup_fk;
+                                $surveyInfo = getSurveyInfo($surveyid,$language);
+                                // Se cuenta el numero total de respuestas.
+                                $query_total_answers = "SELECT count(*) FROM {{survey_$surveyid}} WHERE ".Yii::app()->db->quoteColumnName("submitdate")." IS NOT NULL";
+                                $total_answers = Yii::app()->db->createCommand($query_total_answers)->queryScalar();
+                                $respuestas_incompletas = "SELECT count(*) FROM {{survey_$surveyid}} WHERE ".Yii::app()->db->quoteColumnName("submitdate")." IS NULL";
+                                $respuestas_incompletas = Yii::app()->db->createCommand($respuestas_incompletas)->queryScalar();
+                                if(isset($total_answers) && $total_answers > 0 && isset($respuestas_incompletas)){
+                                    $array = array(
+                                            array("Número total de respuestas completas de esta evaluación", $total_answers),
+                                            array("Número total de respuestas incompletas de esta evaluación", $respuestas_incompletas),
+                                        );
+                                    $this->pdf->tableintopdf($array);
+                                    /*
+                                     * Respuestas
+                                     */
+                                    // Cabecera de la tabla
+                                    $headPDF = array();
+                                    $headPDF[] = array("#","Pregunta", "Prom");
+                                    // Contenido de la tabla
+                                    $tablePDF = array();
+                                    /*
+                                     * Obtengo las preguntas de la encuesta del grupo
+                                     */
+                                    $query_qids_survey = "SELECT qid,gid,question,title FROM QUESTIONS WHERE sid =".$surveyid." AND type = 'L' ORDER BY question_order ASC";
+                                    $result_query_qids_survey = Yii::app()->db->createCommand($query_qids_survey)->query();
+                                    //$query_survey_answers = "SELECT * FROM {{survey_$surveyid}} WHERE ".Yii::app()->db->quoteColumnName("submitdate")." IS NOT NULL";
+                                    //$result_query_survey_answers = Yii::app()->db->createCommand($query_survey_answers)->queryAll();
+                                    /*
+                                     * Obtengo las informaciones adicionales del grupo de la fuente de información, 0 o varias.
+                                     */
+                                    $criteria = new CDbCriteria();
+                                    $criteria->addCondition("fuin_inad_fk = :fuin_pk");
+                                    $criteria->params = array(":fuin_pk" => $fi2->fuin_pk);
+                                    $informacion_adicional = InformacionAdicional::model()->findAll($criteria);
+                                    $promedios_informaciones_adicionales = array();
+                                    foreach ($informacion_adicional as $ia) {
+                                        $promedio_informacion_adicional = array();
+                                        $promedio_informacion_adicional['inad_pk'] = $ia->inad_pk;
+                                        $promedio_informacion_adicional['inad_nombre'] = $ia->inad_nombre;
+                                        $promedio_informacion_adicional['inad_suma'] = 0;
+                                        // Consulto todas las preguntas de la información adicional.
+                                        $criteria = new CDbCriteria();
+                                        $criteria->addCondition("inad_inap_fk = :inad_pk");
+                                        $criteria->params = array(":inad_pk" => $ia->inad_pk);
+                                        $iaps = InformacionAdicionalPregunta::model()->findAll($criteria);
+                                        $promedio_informacion_adicional['inad_cantidad'] = count($iaps);
+                                        $promedios_informaciones_adicionales[] = $promedio_informacion_adicional;
+                                    }
+                                    $answers = array();
+                                    $sum_total = 0;
+                                    $j = 1;
+                                    // RECORRO CADA UNA DE LAS PREGUNTAS DE LA ENCUESTA DEL GRUPO
+                                    foreach ($result_query_qids_survey as $q => $valueq) {
+                                        $gid = $valueq['gid'];
+                                        $qid = $valueq['qid'];
+                                        $title_pregunta_encuesta_clonada = $valueq['title'];
+                                        // Obtengo el nombre de la columna que contiene las respuestas a cada una de las preguntas
+                                        $column = $surveyid."X".$gid."X".$qid;
+                                        $query_code_answ = "SELECT code FROM ANSWERS WHERE qid=".$qid;
+                                        $result_query_code_answ = Yii::app()->db->createCommand($query_code_answ)->queryAll();
+                                        $answer_question = array();
+                                        $sum = 0;
+                                        // RECORRO LAS RESPUESTAS DE UNA PREGUNTA
+                                        for ($i=0; $i < sizeof($result_query_code_answ); $i++) { 
+                                        
+                                            // Obtengo el codigo de la pregunta
+                                            $code_answ = $result_query_code_answ[$i]['code'];
+                                            // Creo la consulta para contar la cantidad de veces que se selecciona una respuesta.
+                                            $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE \"$column\" = '$code_answ' AND ".Yii::app()->db->quoteColumnName("submitdate")." IS NOT NULL";;
+                                            // Obtengo el número de la consulta anterior
+                                            $result = Yii::app()->db->createCommand($query)->queryScalar();
+                                            $answer['code'] = $code_answ;
+                                            $answer['count'] = $result;
+                                            // Extraigo el valor por el cual se deba multiplicar la cantidad de respuestas. 5,3 o 1. generalmente
+                                            $multiplica = stristr($code_answ, '_');
+                                            $multiplica = (int)substr($multiplica, 1);
+                                            //Yii::trace(CVarDumper::dumpAsString($multiplica), 'vardump');die();
+                                            // Calculo el valor final dado los pesos de las respuestas.
+                                            $answer['final_value'] = $answer['count'] * $multiplica;
+                                            
+                                            // Realizo la suma de los valores finales para luego hacer el promedio.
+                                            $sum = $sum + $answer['final_value'];
+                                            $answer_question[] = $answer;
+                                        } // Close for
+                                        $answer_question['average'] = sprintf("%01.2f", $sum / $total_answers);
+                                        $sum_total = $sum_total + $answer_question['average'];
+                                        $tablePDF[] = array($j,$valueq['question'], $answer_question['average']);
+                                        $answers[] = $answer_question;
+                                        $j++;
+                                        
+                                        $indice = 0;
+                                        foreach ($informacion_adicional as $ia) {
+                                            // Consulto todas las preguntas de la información adicional.
+                                            $criteria = new CDbCriteria();
+                                            $criteria->addCondition("inad_inap_fk = :inad_pk");
+                                            $criteria->params = array(":inad_pk" => $ia->inad_pk);
+                                            $iaps = InformacionAdicionalPregunta::model()->findAll($criteria);
+                                            foreach ($iaps as $iap) {
+                                                $pregunta_encuesta_estructura = Yii::app()->db->createCommand("SELECT qid,gid,question,title FROM QUESTIONS WHERE qid=".$iap->ques_inap_fk)->queryRow();
+                                                if($title_pregunta_encuesta_clonada == $pregunta_encuesta_estructura['title']){
+                                                    $promedios_informaciones_adicionales[$indice]['inad_suma'] += $answer_question['average'];
+                                                    break;
+                                                }
+                                            }
+                                            $indice++;
+                                        }
+
+                                    } // Close foreach
+                                    //Yii::trace(CVarDumper::dumpAsString($promedios_informaciones_adicionales), 'vardump');die();
+                                    //$tablePDF[] = array("--","PROMEDIO TOTAL", sprintf("%01.2f", $sum_total/sizeof($result_query_qids_survey)));
+                                    // Incrusto la tabla con los valores obtenidos.
+                                    $this->pdf->headTable($headPDF,$tablePDF);
+                                    $promedio_total = $sum_total/sizeof($result_query_qids_survey);
+                                    $promedio_fi["fuin_promediototal"] = $promedio_total;
+                                    $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], 'B', $aPdfLanguageSettings['pdffontsize']);
+                                    $this->pdf->tableintopdf( array(array("","PROMEDIO TOTAL", sprintf("%01.2f", $promedio_total))));
+
+                                    $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], '', $aPdfLanguageSettings['pdffontsize']);
+                                    $headPDF2 = array();
+                                    $bodyPDF2 = array();
+                                    $headPDF2[] = array('Información adicional', 'Promedio');
+                                    foreach ($promedios_informaciones_adicionales as $key => $value) {
+                                        $promedio = ($value['inad_cantidad'] > 0 ) ? sprintf("%01.2f", $value['inad_suma'] / $value['inad_cantidad']) : "SIN PREGUNTAS ASOCIADAS";
+                                        $bodyPDF2[] = array($value['inad_nombre'], $promedio);
+                                    }
+                                    $this->pdf->headTable($headPDF2,$bodyPDF2);
+                                    $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], 'B', $aPdfLanguageSettings['pdffontsize']);
+
+                                    $resultado_cualitativo = "SELECT recu_nombre FROM resultadocualitativo WHERE ".$promedio_total.">= recu_valorinicio AND ".$promedio_total." <= recu_valorfin";
+                                    $result_resultado_cualitativo = Yii::app()->db->createCommand($resultado_cualitativo)->queryRow();
+                                    $this->pdf->Write(5, "RESULTADO CUANTITATIVO DE LA FUENTE DE INFORMACIÓN: ".sprintf("%01.2f", $promedio_total), '', 0, '', true, 0, false, false, 0);
+                                    $this->pdf->Write(5, "RESULTADO CUALITATIVO DE LA FUENTE DE INFORMACIÓN: ".$result_resultado_cualitativo['recu_nombre'], '', 0, '', true, 0, false, false, 0);
+                                    $resultado_cualitativo = "SELECT * FROM resultadocualitativo";
+                                    $result_resultado_cualitativo = Yii::app()->db->createCommand($resultado_cualitativo)->queryAll();
+                                    $this->pdf->Write(5, "Escala:", '', 0, '', true, 0, false, false, 0);
+                                    // Quitar negrita para el siguiente texto
+                                    $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], '', $aPdfLanguageSettings['pdffontsize']);
+                                    foreach ($result_resultado_cualitativo as $key => $value) {
+                                        //Write($h, $txt, $link='', $fill=0, $align='', $ln=false, $stretch=0, $firstline=false, $firstblock=false, $maxh=0)
+                                        $this->pdf->Write(5, "".sprintf("%01.2f", $value['recu_valorinicio'])." a ".sprintf("%01.2f", $value['recu_valorfin']).": ".$value['recu_nombre'], '', 0, '', true, 0, false, false, 0);
+                                    }
+                                    $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], '', $aPdfLanguageSettings['pdffontsize']);
+                                }elseif (isset($total_answers) && $total_answers == 0) {
+                                    $array = array(
+                                            array("Número total de respuestas de esta evaluación", $total_answers),
+                                        );
+                                    $this->pdf->tableintopdf($array);
+                                }
+                            }else{
+                                //$array = array(
+                                    //array("Estado de la fuente de información o grupo inhabilitado. Encuesta (ID: ".$grupo->surv_grup_fk.")"),
+                                //);
+                                //$this->pdf->tableintopdf($array);
+                            }
+                        }else{
+                            $array = array(
+                                    array("Encuesta (ID: ".$grupo->surv_grup_fk.") no activada."),
+                                );
+                            $this->pdf->tableintopdf($array);
+                        }
+                    }// END IF !IS_NULL($GRUPO)
+                    else
+                    {
+                        $array = array(
+                                    array("Grupo o fuente de información nulos"),
+                                );
+                        $this->pdf->tableintopdf($array);
+                    }
+                } // END FOREACH EDFI2
+            } // END ELSE SIZE OF EDFI > 1
+            $promedios_finales_fi[] = $promedio_fi;
+        } // END FOREACH EDFI
+        // ----------------------------------------------------------------------------------------------
+        // SECCIÓN USADA PARA MOSTRAR LOS RESULTADOS FINALES DE LA EVALUACIÓN, ES DECIR EL CONSOLIDADO
+        // ----------------------------------------------------------------------------------------------
+        $this->pdf->AddPage('P', ' A4');
+        $this->pdf->Bookmark("Resultados Finales", 0, 0);
+        $this->pdf->titleintopdf("Resultados Finales");
+
+        // Un arrelgo dentro de headPDF corresponde a una fila, y cada item que se encuentre en el arreglo será una celda.
+        $headPDF = array();
+        // Un arrelgo dentro de bodyPDF corresponde a una fila, y cada item que se encuentre en el arreglo será una celda.
+        $bodyPDF = array();
+        $headPDF[] = array("Referentes", "Calificación", "Peso", "Porcentaje");
+        $resultado_final_evaluacion = 0;
+        foreach ($promedios_finales_fi as $key => $value) {
+            $fi = FuenteInformacion::model()->findByPk($value['fuin_pk']);
+            $promedio_fi = isset($value['fuin_promediototal']) ? sprintf("%01.2f", $value['fuin_promediototal']) : 0;
+            $ponderado_fi = ($promedio_fi * $fi->fuin_peso ) / 100 ;
+            $ponderado_fi =  sprintf("%01.2f", $ponderado_fi);
+            $bodyPDF[] = array($value['fuin_nombre'], $promedio_fi, $fi->fuin_peso, $ponderado_fi);
+        }
+        // Se muestra la tabla con el consolidado
+        $this->pdf->headTable($headPDF,$bodyPDF);
         // Se finaliza el pdf y se le asigna el nombre para que lo puedan guardar
         $this->pdf->lastPage();
-        return $this->pdf->Output('EvaluacionDocente_'.$surveyid."_".$surveyInfo['surveyls_title'].'.pdf');
+        return $this->pdf->Output('EvaluacionDesempeno_ID.pdf');
+    }
+
+    private function _verificar_grupos_habilitados($edfi2){
+        foreach ($edfi2 as $row2) {
+            $fi = FuenteInformacion::model()->findByPk($row2->fuin_edfi_fk);
+            $grupo = Grupo::model()->findByPk($row2->grup_edfi_fk);
+            //Yii::trace(CVarDumper::dumpAsString($fi), 'vardump');die();
+            if(!is_null($grupo) && !is_null($fi) ){
+                if(tableExists("survey_".$grupo->surv_grup_fk)){
+                    if($grupo->grup_estado){
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
 }

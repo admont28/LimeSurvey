@@ -80,11 +80,11 @@ class EvaluacionDesempeno extends LSActiveRecord{
      * @return String Retorna un string con los botones construidos en etiquetas html
      */
     public function getbuttons(){
-        //$adicionarFI  = App()->createUrl("/admin/teacherissues/sa/configurationinformationsource/templateid/".$this->plev_pk);
+        $exportar_evaluacion = App()->createUrl("/admin/teacherissues/sa/exportperformanceevaluation/performanceevaluationid/".$this->evde_pk);
         $eliminarEvaluacion = App()->createUrl("/admin/teacherissues/sa/deleteperformanceevaluation/performanceevaluationid/".$this->evde_pk);
 
-        //$button = '<a class="btn btn-default" href="'.$adicionarFI.'" role="button" data-toggle="tooltip" title="'.gT('Adicionar fuentes de información').'"><span class="icon-add text-success" ></span></a>';
-        $button = '<a class="btn btn-default eliminar" href="'.$eliminarEvaluacion.'" role="button" data-toggle="tooltip" title="'.gT('La evaluación de desempeño si no se ha aplicado aún.').'"><span class="text-danger glyphicon glyphicon-trash" ></span></a>';
+        $button = '<a class="btn btn-default" href="'.$exportar_evaluacion.'" role="button" data-toggle="tooltip" title="'.gT('Exportar resultados de la evaluación de desempeño').'"><span class="glyphicon glyphicon-download-alt text-success" ></span></a>';
+        $button .= '<a class="btn btn-default eliminar" href="'.$eliminarEvaluacion.'" role="button" data-toggle="tooltip" title="'.gT('La evaluación de desempeño si no se ha aplicado aún.').'"><span class="text-danger glyphicon glyphicon-trash" ></span></a>';
 
         return $button;
     }

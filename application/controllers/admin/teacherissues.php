@@ -856,7 +856,6 @@ class TeacherIssues extends Survey_Common_Action {
             $criteria->addCondition("fuin_edfi_fk = :fuin_pk");
             $criteria->params = array(":fuin_pk" => $fi->fuin_pk);
             $edfi = EvaluacionDesempenoFuenteInformacion::model()->findAll($criteria);
-            Yii::trace(CVarDumper::dumpAsString($edfi), 'vardump');
             if(sizeof($edfi) > 0){
                 $existente = true;
                 break;
@@ -1202,11 +1201,97 @@ class TeacherIssues extends Survey_Common_Action {
         return $aData;
         //$this->_renderWrappedTemplate('survey', 'importSurvey_view', $aData);
     }
+
+    /**
+     * Función que permite exportar las estadísticas de la evaluación de desempeño
+     * @param  int $performanceevaluationid Identificador único de la encuesta.
+     * @return void           Muestra el pdf con las estadísticas de la evaluación docente.
+     */
+    public function exportperformanceevaluation($performanceevaluationid){
+        //Yii::trace(CVarDumper::dumpAsString($variable), 'vardump');
+        $evaluacionDesempeno = EvaluacionDesempeno::model()->findByPk($performanceevaluationid);
+        if(!is_null($evaluacionDesempeno)){
+            $identificacion_evaluado = $evaluacionDesempeno->evde_identificacionevaluado;
+            // CONSULTO EL PEGE_ID Y TIDG_ID PARA PODER CONSULTAR LUEGO EL NOMBRE DE LA PERSONA
+            $sql = "SELECT P.PEGE_ID, P.TIDG_ID FROM GENERAL.PERSONAGENERAL P WHERE P.PEGE_DOCUMENTOIDENTIDAD = :DOCUMENTOEVALUADO";
+            $stmt = oci_parse($this->dbOracleConn, $sql);
+            oci_bind_by_name($stmt, ":DOCUMENTOEVALUADO", $identificacion_evaluado);
+            oci_execute($stmt);
+            $evaluado = new stdClass();
+            $evaluado->identificacionevaluado = $identificacion_evaluado;
+            while ($fila = oci_fetch_assoc($stmt)) {
+                $evaluado->pege_id = $fila['PEGE_ID'];
+                $evaluado->tidg_id = $fila['TIDG_ID'];
+            }
+            // CONSULTO EL NOMBRE COMPLETO DE LA PERSONA DADO EL PEGE_ID DE LA CONSULTA ANTERIOR
+            $sql = "SELECT P.PENG_PRIMERNOMBRE, P.PENG_SEGUNDONOMBRE, P.PENG_PRIMERAPELLIDO, P.PENG_SEGUNDOAPELLIDO FROM GENERAL.PERSONANATURALGENERAL P WHERE P.PEGE_ID = :PEGE_ID";
+            $pege_id = $evaluado->pege_id;
+            $stmt = oci_parse($this->dbOracleConn, $sql);
+            oci_bind_by_name($stmt, ":PEGE_ID", $pege_id);
+            oci_execute($stmt);
+            while ($fila = oci_fetch_assoc($stmt)) {
+                $evaluado->nombrecompleto = $fila['PENG_PRIMERNOMBRE']." ".$fila['PENG_SEGUNDONOMBRE']." ".$fila['PENG_PRIMERAPELLIDO']." ".$fila['PENG_SEGUNDOAPELLIDO'];
+            }
+            // CONSULTO EL TIPO DE PLANTILLA APLICADO AL EVALUADO 1 PARA DOCENTE 3 PARA DIRECTOR DE PROGRAMA, 4 PARA DECANO, 5 PARA VICERRECTOR
+            $command = Yii::app()->db->createCommand("SELECT p.plev_tipolabor FROM plantillaevaluacion p, fuenteinformacion f, evaluaciondesempenofuenteinformacion edfi, evaluaciondesempeno WHERE p.plev_pk = f.plev_fuin_fk AND f.fuin_pk = edfi.fuin_edfi_fk AND edfi.evde_edfi_fk = :evde_pk");
+            $command->bindParam(':evde_pk', $performanceevaluationid);
+            $resultado = $command->queryRow();
+            $existe_nombre_facultad = false;
+            // VERIFICO EL TIPO DE LABOR PARA CREAR LA CONSULTA SQL Y PODER TRAER EL NOMBRE DE LA DEPENDENCIA
+            if($resultado['plev_tipolabor'] == 1 ){
+                $sql = "SELECT PROGRAMA, UNID_NOMBRE FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA WHERE PROG_ID = :ID_DEPENDENCIA";
+                $nombre = "PROGRAMA";
+                $existe_nombre_facultad = true;
+            }
+            else if($resultado['plev_tipolabor'] == 3 ){
+                $sql = "SELECT PROGRAMA, UNID_NOMBRE FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA WHERE UNID_DIRPROGRAMA = :ID_DEPENDENCIA";
+                $nombre = "PROGRAMA";
+                $existe_nombre_facultad = true;
+                
+            }else if($resultado['plev_tipolabor'] == 4){
+                $sql = "SELECT UNID_NOMBRE FROM REPORTES.VW_REPORTES_FACULTADPROGRAMA WHERE UNID_ID = :ID_DEPENDENCIA";
+                $nombre = "UNID_NOMBRE";
+               
+            }
+            else if($resultado['plev_tipolabor'] == 5){
+                $sql = "SELECT UNID_NOMBRE FROM ACADEMICO.UNIDAD WHERE UNID_ID = :ID_DEPENDENCIA";
+                $nombre = "UNID_NOMBRE";
+            }
+            if($sql != "" && $nombre != ""){
+                $dependencia_evaluado = $evaluacionDesempeno->evde_dependenciaevaluado;
+                $stmt = oci_parse($this->dbOracleConn, $sql);
+                oci_bind_by_name($stmt, ":ID_DEPENDENCIA", $dependencia_evaluado);
+                oci_execute($stmt);
+                while ($fila = oci_fetch_assoc($stmt)) {
+                    $evaluado->nombredependencia = $fila[$nombre];
+                    if($existe_nombre_facultad){
+                        $evaluado->nombrefacultad = $fila['UNID_NOMBRE'];
+                    }
+                    
+                }
+            }
+            $sql = "SELECT PEUN_ANO, PEUN_PERIODO FROM ACADEMICO.PERIODOUNIVERSIDAD WHERE PEUN_FECHAINICIO <= :FECHA and :FECHA <= PEUN_FECHAFIN";
+            $fechaevaluacion = $evaluacionDesempeno->evde_fechaevaluacion;
+            $fechaevaluacion = strtotime(str_replace('-', '/', $fechaevaluacion));
+            $fechaevaluacion = date("d/m/y", $fechaevaluacion);
+            Yii::trace(CVarDumper::dumpAsString($fechaevaluacion), 'vardump');
+            //die();
+            $stmt = oci_parse($this->dbOracleConn, $sql);
+            oci_bind_by_name($stmt, ":FECHA", $fechaevaluacion);
+            oci_execute($stmt);
+            while ($fila = oci_fetch_assoc($stmt)) {
+                $evaluado->periodoevaluacion = $fila['PEUN_ANO']." - ".$fila['PEUN_PERIODO'];
+            }
+            Yii::app()->loadHelper('admin/statistics');
+            $helper = new statistics_helper();
+            $helper->generate_results_performance_evaluation($performanceevaluationid, $evaluado);
+            exit;
+        }
         //$surveyid = sanitize_int($surveyid);
         //no survey ID? -> come and get one
-        if (!isset($surveyid)) {
-            $surveyid=returnGlobal('sid');
-        }
+        //if (!isset($surveyid)) {
+            //$surveyid=returnGlobal('sid');
+        //}
         //$aData['surveyid'] = $surveyid;
         // Set language for questions and answers to base language of this survey
         //$language = Survey::model()->findByPk($surveyid)->language;
@@ -1219,9 +1304,5 @@ class TeacherIssues extends Survey_Common_Action {
          //SORT IN NATURAL ORDER!
         //usort($rows, 'groupOrderThenQuestionOrder');
         //Yii::trace(CVarDumper::dumpAsString($rows), 'vardump');
-        //Yii::app()->loadHelper('admin/statistics');
-        $helper = new statistics_helper();
-        $helper->generate_results_performance_evaluation($performanceevaluationid);
-        exit;
     }
 }

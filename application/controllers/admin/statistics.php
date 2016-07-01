@@ -833,35 +833,4 @@ class statistics extends Survey_Common_Action {
         parent::_renderWrappedTemplate($sAction, $aViewUrls, $aData);
     }
 
-    /**
-     * Función que permite exportar las estadísticas de la evaluación docente
-     * @param  int $surveyid Identificador único de la encuesta.
-     * @return void           Muestra el pdf con las estadísticas de la evaluación docente.
-     */
-    public function exportteacherevaluation($surveyid){
-        //Yii::trace(CVarDumper::dumpAsString($variable), 'vardump');
-        $surveyid = sanitize_int($surveyid);
-        //no survey ID? -> come and get one
-        if (!isset($surveyid)) {
-            $surveyid=returnGlobal('sid');
-        }
-        $aData['surveyid'] = $surveyid;
-        // Set language for questions and answers to base language of this survey
-        $language = Survey::model()->findByPk($surveyid)->language;
-        $aData['language'] = $language;
-        //Select public language file
-        $row  = Survey::model()->find('sid = :sid', array(':sid' => $surveyid));
-        //Yii::trace(CVarDumper::dumpAsString($row), 'vardump');
-         //store all the data in $rows
-        $rows = Question::model()->getQuestionList($surveyid, $language);
-         //SORT IN NATURAL ORDER!
-        usort($rows, 'groupOrderThenQuestionOrder');
-        //Yii::trace(CVarDumper::dumpAsString($rows), 'vardump');
-        Yii::app()->loadHelper('admin/statistics');
-        $helper = new statistics_helper();
-        $helper->generate_statistics_teacher_evaluation($surveyid);
-        exit;
-    }
-
-
 }
