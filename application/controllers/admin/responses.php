@@ -751,13 +751,26 @@ class responses extends Survey_Common_Action
                 {
                     if($sFiltering=='token')
                         $sFiltering='tokens.token';
-                    $oCriteria->compare(Yii::app()->db->quoteColumnName($sFiltering),$value,true);
+                    /* ADMA - admontoya@uniquindio.edu.co - 2016/11/16 */
+                    /* Antes de la modificación estaba:
+                     *
+                     * $oCriteria->compare(Yii::app()->db->quoteColumnName($sFiltering),$value,true);
+                     * 
+                     * Lo anterior es para adicionar una comparación con la columna que viene en la petición
+                     * post ($sFiltering) con el valor ($value) y con la búsqueda parcial activada (true).
+                     * 
+                     * Se modifica la línea de comparación para que convierta a minúscula lo que contenga la columna ($sFiltering), al igual que el valor que viene por post ($value), además, convierte el tipo de dato de la columna a varchar, para poder comparar numeros y fechas sin que ocasione error. Se deja activada la búsqueda parcial (true)
+                     * ver: https://github.com/yiisoft/yii/issues/1912#issuecomment-63793274
+                     * Y
+                     * http://stackoverflow.com/questions/23622993/postgresql-error-operator-does-not-exist-integer-character-varying
+                     */
+                    $oCriteria->compare("LOWER(".Yii::app()->db->quoteColumnName($sFiltering)."::varchar)",strtolower($value),true);
                 }
             }
             if($sFilters=Yii::app()->request->getParam('filters'))
             {
                 // Variable not used
-                //$aFilters=json_decode($sFilters);
+                // $aFilters=json_decode($sFilters);
                 // TODO : groupOp and rules
             }
         }
