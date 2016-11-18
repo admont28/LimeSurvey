@@ -859,8 +859,22 @@ class responses extends Survey_Common_Action
                     {
                         if (isset($aFilesInfo[$iFileIndex]))
                         {
-                            $aSurveyEntry[] = htmlspecialchars($aFilesInfo[$iFileIndex]['title'],ENT_QUOTES, 'UTF-8');
-                            $aSurveyEntry[] = htmlspecialchars($aFilesInfo[$iFileIndex]['comment'],ENT_QUOTES, 'UTF-8');
+                            /*
+                             * ADMA - admontoya@uniquindio.edu.co - 2016/11/18
+                             * Antes de la modificación:
+                             *
+                             * $aSurveyEntry[] = htmlspecialchars($aFilesInfo[$iFileIndex]['title'],ENT_QUOTES, 'UTF-8');
+                             * $aSurveyEntry[] = htmlspecialchars($aFilesInfo[$iFileIndex]['comment'],ENT_QUOTES, 'UTF-8');
+                             *
+                             * Se adiciona un if verificando que el title y comment se encuentren definidos para poder así adicionarlos al arreglo, esto se debe a que ocurría un error diciendo que la propiedad title y comment no estaban definidos, porque no se escribió ningún titulo ni comentario al momento de cargar los archivos.
+                             */
+                            if(isset($aFilesInfo[$iFileIndex]['title'])){
+                                $aSurveyEntry[] = htmlspecialchars($aFilesInfo[$iFileIndex]['title'],ENT_QUOTES, 'UTF-8');
+                            }
+                            if(isset($aFilesInfo[$iFileIndex]['comment'])){
+                                $aSurveyEntry[] = htmlspecialchars($aFilesInfo[$iFileIndex]['comment'],ENT_QUOTES, 'UTF-8');
+                            }
+                            /* FIN ADMA - admontoya@uniquindio.edu.co - 2016/11/18 */
                             $aSurveyEntry[] = CHtml::link(rawurldecode($aFilesInfo[$iFileIndex]['name']), $this->getController()->createUrl("/admin/responses",array("sa"=>"actionDownloadfile","surveyid"=>$surveyid,"iResponseId"=>$row['id'],"sFileName"=>$aFilesInfo[$iFileIndex]['name'])) );
                             $aSurveyEntry[] = sprintf('%s Mb',round($aFilesInfo[$iFileIndex]['size']/1000,2));
                         }
@@ -1508,8 +1522,24 @@ class responses extends Survey_Common_Action
                 */
                 if (file_exists($tmpdir . basename($file['filename'])))
                 {
-                    $filelist[] = array(PCLZIP_ATT_FILE_NAME => $tmpdir . basename($file['filename']),
+                    /*
+                     * ADMA - admontoya@uniquindio.edu.co - 2016/11/18
+                     * Modificación solicitada por Admisiones para facilitar el proceso de revisión
+                     * de documentos cargados por los admitidos.
+                     * Antes de la modificación:
+                     *
+                     *   $filelist[] = array(PCLZIP_ATT_FILE_NAME => $tmpdir . basename($file['filename']),
                         PCLZIP_ATT_FILE_NEW_FULL_NAME => sprintf("%05s_%02s_%s", $response->id, $filecount, rawurldecode($file['name'])));
+                     *
+                     * Se adiciona el id de la respuesta seguido del / para que se agrupen los archivos por directorios, nombrados con el id de respuesta, $response->id."/", ej:
+                     * 11/archivo.pdf
+                     * 11/otro_archivo.pdf
+                     * 3/archivo_de_respuesta_3.pdf
+                     * 3/otro_archivo_de_respuesta_3.pdf
+                     */
+                    $filelist[] = array(PCLZIP_ATT_FILE_NAME => $tmpdir . basename($file['filename']),
+                        PCLZIP_ATT_FILE_NEW_FULL_NAME => $response->id."/".sprintf("%05s_%02s_%s", $response->id, $filecount, rawurldecode($file['name'])));
+                    /* FIN ADMA - admontoya@uniquindio.edu.co - 2016/11/18 */
                 }
             }
         }

@@ -1582,13 +1582,23 @@ function getExtendedAnswer($iSurveyID, $sFieldCode, $sValue, $sLanguage)
                     if (is_array($files)) {
                         foreach ($files as $file) {
                             $sValue .= rawurldecode($file->name) .
-                            ' (' . round($file->size) . 'KB) ' .
-                            strip_tags($file->title);
-                            if (trim(strip_tags($file->comment))!="")
+                            ' (' . round($file->size) . 'KB) ';
+                            /*
+                             * ADMA - admontoya@uniquindio.edu.co - 2016/11/18
+                             * Antes de la modificación:
+                             *
+                             *  $sValue .= rawurldecode($file->name) . ' (' . round($file->size) . 'KB) '. strip_tags($file->title);
+                             *
+                             * Se adiciona un if verificando que el title y comment se encuentren definidos para poder así adicionarlos al string, esto se debe a que ocurría un error diciendo que la propiedad title y comment no estaban definidos, porque no se escribió ningún titulo ni comentario al momento de cargar los archivos.
+                             */
+                            if(isset($file->title) && trim(strip_tags($file->title)) != ""){
+                                $sValue  .= strip_tags($file->title);
+                            }
+                            if (isset($file->comment) && trim(strip_tags($file->comment))!="")
                             {
                                 $sValue .=' - ' . strip_tags($file->comment);
                             }
-
+                            /* FIN ADMA - admontoya@uniquindio.edu.co - 2016/11/18 */
                         }
                     }
                 }
