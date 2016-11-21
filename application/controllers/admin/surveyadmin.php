@@ -2502,4 +2502,63 @@ class SurveyAdmin extends Survey_Common_Action
         $this->_renderWrappedTemplate('survey', 'listMySurveys_view', $aData);
     }
 
+    /**
+     * Función que permite cambiar las fechas de finalización e inicio de una encuesta.
+     * Una vez modificada las fechas y presionado el botón guardar, la solicitud regresa nuevamente a esta
+     * función, y es trata de otra forma (actualizando las fechas).
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - CSNT - 21/11/2016
+     * @param  int $surveyid identificador único de la encuesta
+     * @return void          Redirecciona al formulario para cambiar las fechas.
+     */
+    public function changedate($surveyid){
+        // Verifico si el usuario actual tiene permisos de actualización sobre la encuesta en cuestión.
+        // Esto para evitar que mediante la url realice cambios de fechas sin autorización.
+        if (!Permission::model()->hasSurveyPermission($surveyid,'surveylocale','update')){
+            die();
+        }
+        if(isset($_POST["surveyid"], $_POST['save'], $_POST['startdate'], $_POST['expires'])){
+            $oSurvey=Survey::model()->findByPk($surveyid);
+            /* Start to fix some param before save (TODO : use models directly ?) */
+            /* Date management */
+            Yii::app()->loadHelper('surveytranslator');
+            $formatdata = getDateFormatData(Yii::app()->session['dateformat']);
+            Yii::app()->loadLibrary('Date_Time_Converter');
+            $startdate = App()->request->getPost('startdate');
+            if (trim($startdate)==""){
+                $startdate=null;
+            }else{
+                Yii::app()->loadLibrary('Date_Time_Converter');
+                $datetimeobj = new date_time_converter($startdate,$formatdata['phpdate'].' H:i'); //new Date_Time_Converter($startdate,$formatdata['phpdate'].' H:i');
+                $startdate=$datetimeobj->convert("Y-m-d H:i:s");
+            }
+            $expires = App()->request->getPost('expires');
+            if (trim($expires)==""){
+                $expires=null;
+            }else{
+                $datetimeobj = new date_time_converter($expires, $formatdata['phpdate'].' H:i'); //new Date_Time_Converter($expires, $formatdata['phpdate'].' H:i');
+                $expires=$datetimeobj->convert("Y-m-d H:i:s");
+            }
+            $oSurvey->expires =  $expires;
+            $oSurvey->startdate =  $startdate;
+            if ($oSurvey->save()){
+                Yii::app()->setFlashMessage("Se ha modificado las fechas con éxito.");
+            }else{
+                Yii::app()->setFlashMessage(gT("Survey could not be updated."),"error");
+                tracevar($oSurvey->getErrors());
+            }
+            $this->getController()->redirect(array('admin/survey/sa/view/surveyid/'.$surveyid));
+        }
+        else{
+            $surveyinfo = Survey::model()->findByPk($surveyid)->surveyinfo;
+            $aData['title_bar']['title'] = $surveyinfo['surveyls_title']."(".gT("ID").":".$surveyid.")";
+            $aData['surveyid'] = $surveyid;
+            $aData['surveybar']['buttons']['view'] = true;
+            $aData['sidemenu']['state'] = true;
+            $esrow = self::_fetchSurveyInfo('editsurvey', $surveyid);
+            $aData = array_merge($aData, $this->_tabPublicationAccess($esrow));
+            
+            $this->_renderWrappedTemplate('survey', 'changeDate_view', $aData);
+        }
+    }
+
 } // Close surveyadmin class

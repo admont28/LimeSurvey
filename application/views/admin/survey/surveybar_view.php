@@ -224,7 +224,12 @@
                                     </a>
                                 </li>
                             <?php endif; ?>
-
+                                <li>
+                                    <a href='<?php echo $this->createUrl("admin/survey/sa/changedate/surveyid/$surveyid");?>'>
+                                        <span class="glyphicon glyphicon-calendar" ></span>
+                                         <?php echo "Cambiar fechas de encuesta";?>
+                                    </a>
+                                </li>
                             <?php if($surveysecurity): ?>
 
                                 <!-- Survey permissions -->
