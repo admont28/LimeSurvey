@@ -606,14 +606,34 @@ class tokens extends Survey_Common_Action
             'emailstatus' => Yii::app()->request->getPost('emailstatus'),
             'token' => Yii::app()->request->getPost('token'),
             'language' => Yii::app()->request->getPost('language'),
-            'sent' => Yii::app()->request->getPost('sent'),
-            'remindersent' => Yii::app()->request->getPost('remindersent'),
-            'remindercount' => Yii::app()->request->getPost('remindercount'),
-            'completed' => Yii::app()->request->getPost('completed'),
             'usesleft' => Yii::app()->request->getPost('usesleft'),
             'validfrom' => $from,
             'validuntil' => $until);
             $attrfieldnames = GetParticipantAttributes($iSurveyId);
+            /**
+             * ADMA - admontoya@uniquindio.edu.co - 2016/11/22
+             * Modificación realizada debido a que se restringio la actualización de los campos:
+             * sent (Invitación enviada)
+             * remindersent (Recordatorio enviado)
+             * remindercount (Número de recordatorios)
+             * completed (Completada)
+             * Entonces al momento de actualizar un encuestado, dichos campos no son enviados por post,
+             * así que son nulos, y se actualizan de esta forma en la base de datos, 
+             * queremos que no se reemplace el valor actual en bd si los campos mensionados arriba son nulos.
+             */
+            $v_sent = Yii::app()->request->getPost('sent');
+            $v_remindersent = Yii::app()->request->getPost('remindersent');
+            $v_remindercount = Yii::app()->request->getPost('remindercount');
+            $v_completed = Yii::app()->request->getPost('completed');
+            if(isset($v_sent))
+                $aData['sent'] = $v_sent;
+            if(isset($v_remindersent))
+                $aData['remindersent'] = $v_remindersent;
+            if(isset($v_remindercount))
+                $aData['remindercount'] = $v_remindercount;
+            if(isset($v_completed))
+                $aData['completed'] = $v_completed;
+            /* FIN ADMA - admontoya@uniquindio.edu.co - 2016/11/22 */
             foreach ($attrfieldnames as $attr_name => $desc)
             {
                 $value = Yii::app()->request->getPost($attr_name);
