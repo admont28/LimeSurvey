@@ -227,7 +227,7 @@
                                 <li>
                                     <a href='<?php echo $this->createUrl("admin/survey/sa/changedate/surveyid/$surveyid");?>'>
                                         <span class="glyphicon glyphicon-calendar" ></span>
-                                         <?php echo "Cambiar fechas de encuesta";?>
+                                         <?php echo "Modificar fechas de encuesta";?>
                                     </a>
                                 </li>
                             <?php if($surveysecurity): ?>
@@ -543,6 +543,13 @@
                                             <?php eT("Responses & statistics");?>
                                         </a>
                                     </li>
+                                    <!-- Export results - quality office -->
+                                    <li>
+                                        <a href='<?php echo Yii::App()->createUrl('admin/statistics/sa/exportqualityformatresults/surveyid/'.$surveyid);?>' >
+                                            <span class="icon-display_export"></span>
+                                            Exportar resultados formato calidad
+                                        </a>
+                                    </li>
                                 <?php else:?>
 
                                     <!-- Responses & statistics -->
@@ -600,12 +607,7 @@
                         </ul>
                     </div>
                 <?php endif;?>
-                
-                <!-- Teacher Evaluation Export -->
-                <a class="btn btn-default" href="<?php echo Yii::App()->createUrl('admin/statistics/sa/exportteacherevaluation/surveyid/'.$surveyid);?>" role="button">
-                    <span class="icon-display_export"></span>
-                    Exportar evaluación docente
-                </a>
+
                 <?php if($permission):?>
                     <!-- List Groups -->
                         <!-- admin/survey/sa/view/surveyid/838454 listquestiongroups($iSurveyID)-->

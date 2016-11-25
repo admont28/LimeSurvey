@@ -644,7 +644,6 @@ class statistics_helper {
         $sDatabaseType = Yii::app()->db->getDriverName();
         $statisticsoutput="";
         $qqid = "";
-
         /* Some variable depend on output type, actually : only line feed */
         switch($outputType)
         {
@@ -658,7 +657,7 @@ class statistics_helper {
             default:
                 break;
         }
-
+        
         //M - Multiple choice, therefore multiple fields - one for each answer
         if ($firstletter == "M" || $firstletter == "P")
         {
@@ -3629,63 +3628,63 @@ class statistics_helper {
     /**
      * Generate simple statistics
      */
-     public function generate_simple_statistics($surveyid, $allfields, $q2show='all', $usegraph=0, $outputType='pdf', $pdfOutput='I',$sLanguageCode=null, $browse = true)
-     {
-             $aStatisticsData=array();
+    public function generate_simple_statistics($surveyid, $allfields, $q2show='all', $usegraph=0, $outputType='pdf', $pdfOutput='I',$sLanguageCode=null, $browse = true)
+    {
+            $aStatisticsData=array();
 
-             Yii::import('application.helpers.surveytranslator_helper', true);
-             Yii::import('application.third_party.ar-php.Arabic', true);
+            Yii::import('application.helpers.surveytranslator_helper', true);
+            Yii::import('application.third_party.ar-php.Arabic', true);
 
-             $sTempDir = Yii::app()->getConfig("tempdir");
+            $sTempDir = Yii::app()->getConfig("tempdir");
 
-             //pick the best font file if font setting is 'auto'
-             if (is_null($sLanguageCode))
-             {
-                 $sLanguageCode =  getBaseLanguageFromSurveyID($surveyid);
-             }
-             Yii::app()->setLanguage($sLanguageCode);
+            //pick the best font file if font setting is 'auto'
+            if (is_null($sLanguageCode))
+            {
+                $sLanguageCode =  getBaseLanguageFromSurveyID($surveyid);
+            }
+            Yii::app()->setLanguage($sLanguageCode);
 
-             /*
+            /*
              * this variable is used in the function shortencode() which cuts off a question/answer title
              * after $maxchars and shows the rest as tooltip (in html mode)
              */
-             $maxchars = 13;
+            $maxchars = 13;
 
-             //Get an array of codes of all available languages in this survey
-             $surveylanguagecodes = Survey::model()->findByPk($surveyid)->additionalLanguages;
-             $surveylanguagecodes[] = Survey::model()->findByPk($surveyid)->language;
+            //Get an array of codes of all available languages in this survey
+            $surveylanguagecodes = Survey::model()->findByPk($surveyid)->additionalLanguages;
+            $surveylanguagecodes[] = Survey::model()->findByPk($surveyid)->language;
 
-             $fieldmap=createFieldMap($surveyid, "full", false, false, $sLanguageCode);
+            $fieldmap=createFieldMap($surveyid, "full", false, false, $sLanguageCode);
 
-             // Set language for questions and answers to base language of this survey
-             $language=$sLanguageCode;
+            // Set language for questions and answers to base language of this survey
+            $language=$sLanguageCode;
 
-             // This gets all the 'to be shown questions' from the POST and puts these into an array
-             $summary = $q2show;
+            // This gets all the 'to be shown questions' from the POST and puts these into an array
+            $summary = $q2show;
 
              /**
              * Start generating
              */
 
-             //count number of answers
-             $query = "SELECT count(*) FROM {{survey_$surveyid}}";
+            //count number of answers
+            $query = "SELECT count(*) FROM {{survey_$surveyid}}";
 
-             //get me some data Scotty
-             $results=$total=Yii::app()->db->createCommand($query)->queryScalar();
-             $percent='100';
-             $sql= null;
+            //get me some data Scotty
+            $results=$total=Yii::app()->db->createCommand($query)->queryScalar();
+            $percent='100';
+            $sql= null;
 
-             //only continue if we have something to output
-             $bBrowse = true;
+            //only continue if we have something to output
+            $bBrowse = true;
 
-             $aData['results'] = $results;
-             $aData['total'] = $total;
-             $aData['percent'] = $percent;
-             $aData['browse'] = $bBrowse;
-             $aData['surveyid'] = $surveyid;
-             $aData['sql'] = $sql;
+            $aData['results'] = $results;
+            $aData['total'] = $total;
+            $aData['percent'] = $percent;
+            $aData['browse'] = $bBrowse;
+            $aData['surveyid'] = $surveyid;
+            $aData['sql'] = $sql;
 
-             $sOutputHTML = '';
+            $sOutputHTML = '';
 
             //let's run through the survey
             $runthrough=$summary;
@@ -3740,21 +3739,21 @@ class statistics_helper {
 
             $sOutputHTML .= '</div>';
 
-             $sGoogleMapsAPIKey = trim(Yii::app()->getConfig("googleMapsAPIKey"));
-             if ($sGoogleMapsAPIKey!='')
-             {
-                 $sGoogleMapsAPIKey='&key='.$sGoogleMapsAPIKey;
-             }
-             $sSSL='';
-             if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != "off"){
-                 $sSSL='s';
-             }
-             $sOutputHTML .= "<script type=\"text/javascript\" src=\"http{$sSSL}://maps.googleapis.com/maps/api/js?sensor=false$sGoogleMapsAPIKey\"></script>\n"
+            $sGoogleMapsAPIKey = trim(Yii::app()->getConfig("googleMapsAPIKey"));
+            if ($sGoogleMapsAPIKey!='')
+            {
+                $sGoogleMapsAPIKey='&key='.$sGoogleMapsAPIKey;
+            }
+            $sSSL='';
+            if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != "off"){
+                $sSSL='s';
+            }
+            $sOutputHTML .= "<script type=\"text/javascript\" src=\"http{$sSSL}://maps.googleapis.com/maps/api/js?sensor=false$sGoogleMapsAPIKey\"></script>\n"
              ."<script type=\"text/javascript\">var site_url='".Yii::app()->baseUrl."';var temppath='".Yii::app()->getConfig("tempurl")."';var imgpath='".Yii::app()->getConfig('adminimageurl')."';var aStatData=".ls_json_encode($aStatisticsData)."</script>";
 
 
-             return $sOutputHTML;
-     }
+            return $sOutputHTML;
+    }
 
     /**
      * Generates statistics with subviews
@@ -4185,7 +4184,6 @@ class statistics_helper {
 
 
         $selects=buildSelects($allfields, $surveyid, $language);
-
         //count number of answers
         $query = "SELECT count(*) FROM {{survey_$surveyid}}";
 
@@ -4311,7 +4309,7 @@ class statistics_helper {
         {
             //let's run through the survey
             $runthrough=$summary;
-
+            
             //START Chop up fieldname and find matching questions
 
             //loop through all selected questions
@@ -4319,7 +4317,9 @@ class statistics_helper {
             {
 
                 //Step 1: Get information about this response field (SGQA) for the summary
+                
                 $outputs=$this->buildOutputList($rt, $language, $surveyid, $outputType, $sql, $sLanguageCode);
+                
                 $sOutputHTML .= $outputs['statisticsoutput'];
                 //2. Collect and Display results #######################################################################
                 if (isset($outputs['alist']) && $outputs['alist']) //Make sure there really is an answerlist, and if so:
@@ -4334,7 +4334,7 @@ class statistics_helper {
                 unset($outputs);
                 unset($display);
             }    // end foreach -> loop through all questions
-
+            die;
             //output
             if($outputType=='html')
             $sOutputHTML .= "<br />&nbsp;\n";
@@ -4568,145 +4568,377 @@ class statistics_helper {
     }
 
     /**
-     * Función que permite generar las estadísticas para las evaluaciones de docente.
-     * Dado por el acuerdo 109 del 24 de Octubre de 1996 Armenia.
-     * @param  ind $surveyid Identificador único de la encuesta
-     * @param  string $language Lenguaje de la encuesta, por defecto: es (español)
-     * @return PDF           Retorna el pdf con las estadísticas de la evaluación docente.
-     */
-    public function generate_statistics_teacher_evaluation($surveyid, $language = "es"){
-        /*
-         * ------------------------------------------------------------------------------------
-         * CONSTRUCCIÓN DEL DOCUMENTO PDF, CABECERAS Y CONFIGURACIONES ADICIONALES
-         * ------------------------------------------------------------------------------------
-         */
-        /*
-         * Se importan las librerías y los helpers para crear pdf
-         */
-        Yii::import('application.libraries.admin.pdf', true);
-        Yii::import('application.helpers.pdfHelper');
-        $aPdfLanguageSettings = pdfHelper::getPdfLanguageSettings($language);
-        // Se crea un nuevo documento pdf
-        $this->pdf = new pdf();
-
-        $surveyInfo = getSurveyInfo($surveyid,$language);
-
-        // set document information
-        $this->pdf->SetCreator(PDF_CREATOR);
-        $this->pdf->SetAuthor('GESENUQ');
-        $this->pdf->SetTitle(sprintf("Evaluación docente %s",$surveyid));
-        $this->pdf->SetSubject($surveyInfo['surveyls_title']);
-        $this->pdf->SetKeywords('GESEN-UQ, LimeSurvey,'.gT("Statistics").', '.sprintf(gT("Survey %s"),$surveyid));
-        $this->pdf->SetDisplayMode('fullpage', 'one');
-        $this->pdf->setLanguageArray($aPdfLanguageSettings['lg']);
-
-        // set header and footer fonts
-        $this->pdf->setHeaderFont(Array($aPdfLanguageSettings['pdffont'], '', PDF_FONT_SIZE_MAIN));
-        $this->pdf->setFooterFont(Array($aPdfLanguageSettings['pdffont'], '', PDF_FONT_SIZE_DATA));
-
-        // set default header data
-        // Since png crashes some servers (and we can not try/catch that) we use .gif (or .jpg) instead
-        //$headerlogo = '$this->pdf';
-        //$headerlogo = 'LOGO-UQ.png';
-        $headerlogo = "";
-        $this->pdf->SetHeaderData("LOGO-UQ-HEADER.png", 15, "Resultados evaluación docente" , "Evaluación docente (ID:".$surveyid.") '".flattenText($surveyInfo['surveyls_title'],false,true,'UTF-8')."'");
-        $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], '', $aPdfLanguageSettings['pdffontsize']);
-        // set default monospaced font
-        $this->pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
-
-        /*
-         * ----------------------------------------------------------------------------------------
-         * GENERADOR DE RESULTADOS
-         * ----------------------------------------------------------------------------------------
-         */
-        // Se cuenta el numero total de respuestas.
-        $query_total_answers = "SELECT count(*) FROM {{survey_$surveyid}}";
-        $total_answers = Yii::app()->db->createCommand($query_total_answers)->queryScalar();
-        if(isset($total_answers) && $total_answers) 
-        {
-            $array = array(
-                    array("Número total de respuestas de esta evaluación", $total_answers),
-                );
+    * Generates statistics
+    *
+    * @param int $surveyid The survey id
+    * @param mixed $allfields
+    * @param mixed $q2show
+    * @param mixed $usegraph
+    * @param string $outputType Optional - Can be xls, html or pdf - Defaults to pdf
+    * @param string $pdfOutput Sets the target for the PDF output: DD=File download , F=Save file to local disk
+    * @param string $statlangcode Lamguage for statistics
+    * @param mixed $browse  Show browse buttons
+    * @return buffer
+    */
+    public function generate_statistics_quality_format($surveyid, $allfields, $q2show='all', $usegraph=0, $outputType='pdf', $pdfOutput='I',$sLanguageCode=null, $browse = true)
+    {
+        $activar_excel = true;
+        //count number of answers
+        $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE submitdate is not null";
+        $total = Yii::app()->db->createCommand($query)->queryScalar();
+        //no survey ID? -> come and get one
+        if (!isset($surveyid)) {
+            $surveyid=returnGlobal('sid');
         }
-        $fecha_actual = date("Y-m-d");
-        $this->pdf->AddPage('P', ' A4');
-        $this->pdf->Bookmark("Evaluación Docente", 0, 0);
-        $this->pdf->titleintopdf("Resultados evaluación docente (ID: ".$surveyid." ) - fecha de reporte: ".$fecha_actual);
-        $this->pdf->tableintopdf($array);
-
+        $summary = $q2show;
+        $surveyinfo = Survey::model()->findByPk($surveyid)->surveyinfo;
+        $aStatisticsData=array(); //astatdata generates data for the output page's javascript so it can rebuild graphs on the fly
+        //load surveytranslator helper
+        Yii::import('application.helpers.surveytranslator_helper', true);
+        Yii::import('application.third_party.ar-php.Arabic', true);
+        //pick the best font file if font setting is 'auto'
+        if (is_null($sLanguageCode)){
+            $sLanguageCode =  getBaseLanguageFromSurveyID($surveyid);
+        }
+        Yii::app()->setLanguage($sLanguageCode);
+        // Set language for questions and answers to base language of this survey
+        $language = $sLanguageCode;
+        /**
+        * Initiate the Spreadsheet_Excel_Writer
+        */
+        if($activar_excel){
+            require_once(APPPATH.'/third_party/pear/Spreadsheet/Excel/Xlswriter.php');
+            $this->workbook = new Xlswriter();
+            $this->workbook->setVersion(8);
+            $sTempDir = Yii::app()->getConfig("tempdir");
+            // Inform the module that our data will arrive as UTF-8.
+            // Set the temporary directory to avoid PHP error messages due to open_basedir restrictions and calls to tempnam("", ...)
+            if (!empty($sTempDir)) {
+                $this->workbook->setTempDir($sTempDir);
+            }
+            // Se crea la primer hoja dentro del excel
+            $this->sheet = $this->workbook->addWorksheet(utf8_decode('results-survey'.$surveyid));
+            $this->xlsPercents = &$this->workbook->addFormat();
+            $this->xlsPercents->setNumFormat('0.00%');
+            $this->xlsPercents->setAlign("center");
+            $this->xlsPercents->setAlign("vcenter");
+            $this->xlsPercents->setBorder(1);
+            $this->formatBold = &$this->workbook->addFormat(array('Bold'=>1));
+            /* Formato para un texto justificado, alineado al centro verticalmente, negrita, borde delgado, ajustado al texto */
+            $justificado_negrita = &$this->workbook->addFormat();
+            $justificado_negrita->setAlign("justify");
+            $justificado_negrita->setAlign("vcenter");
+            $justificado_negrita->setBold();
+            // Color gris claro
+            $justificado_negrita->setFgColor(22);
+            // 1 Delgado -- 2 Grueso
+            $justificado_negrita->setBorder(1);
+            $justificado_negrita->setTextWrap();
+            /* Formato para un texto justificado, alineado al centro verticalmente, borde delgado, ajustado al texto */
+            $justificado = &$this->workbook->addFormat();
+            $justificado->setAlign("justify");
+            $justificado->setAlign("vcenter");
+            $justificado->setBorder(1);
+            $justificado->setTextWrap();
+            /* Formato para un texto centrado horizontalmente, alineado al centro verticalmente, borde delgado, ajustado al texto */
+            $centrado = &$this->workbook->addFormat();
+            $centrado->setAlign("center");
+            $centrado->setAlign("vcenter");
+            $centrado->setBorder(1);
+            $centrado->setTextWrap();
+            /* Formato para un texto centrado horizontalmente, alineado al centro verticalmente, negrita, borde delgado, ajustado al texto */
+            $centrado_negrita = &$this->workbook->addFormat();
+            $centrado_negrita->setAlign("center");
+            $centrado_negrita->setAlign("vcenter");
+            $centrado_negrita->setBold();
+            $centrado_negrita->setBorder(1);
+            $centrado_negrita->setTextWrap();
+            // Color gris claro
+            $centrado_negrita->setFgColor(22);
+            $this->sheet->setInputEncoding('utf-8');
+            // setColumn( integer $firstcol , integer $lastcol , float $width , mixed $format=0 , integer $hidden=0 )
+            $this->sheet->setColumn(0,3,20);
+            $this->sheet->setColumn(4,20,10);
+            $separator="~|";
+        }
+        /**
+        * Start generating
+        */
+        if($activar_excel){
+            $this->xlsRow = 0;
+            $this->sheet->write($this->xlsRow,0,strtoupper($surveyinfo['surveyls_title']), $this->formatBold);
+            $this->xlsRow++;
+            $this->sheet->write($this->xlsRow,0,"TOTAL DE ENCUESTAS APLICADAS", $this->formatBold);
+            $this->sheet->mergeCells($this->xlsRow, 0, $this->xlsRow, 1);
+            $this->sheet->writeNumber($this->xlsRow,2,$total);
+            $this->xlsRow++;
+        }
         /*
-         * Respuestas
+         * Tipos de preguntas usadas por la oficina de calidad:
+         * ! : Lista (Desplegable)
+         * N : Entrada Numérica 
+         * A : Matriz (Elegir del 1 al 5) 
+         * F : Matriz Personalizada
+         * L : Lista (Radio)
+         * Y : Si/No
          */
-        // Cabecera de la tabla
-        $headPDF[] = array("#","Pregunta", "Promedio");
-        // Contenido de la tabla
-        $tablePDF = array();
-
-        /*
-         * Obtengo todos los qid de la encuesta.
-         */
-        $query_qids_survey = "SELECT qid,gid,question FROM QUESTIONS WHERE sid =".$surveyid." AND type = 'L' ORDER BY question_order ASC";
-        $result_query_qids_survey = Yii::app()->db->createCommand($query_qids_survey)->query();
-        $query_survey_answers = "SELECT * FROM {{survey_$surveyid}}";
-        $result_query_survey_answers = Yii::app()->db->createCommand($query_survey_answers)->queryAll();
-        //Yii::trace(CVarDumper::dumpAsString($result_query_survey_answers), 'vardump');
-        $answers = array();
-        $sum_total = 0;
-        $j = 1;
-        foreach ($result_query_qids_survey as $q => $valueq) {
-                // $valueq['qid'] obtengo el qid
-                // $valueq['gid'] obtengo el id del grupo
-                $gid = $valueq['gid'];
-                $qid = $valueq['qid'];
-                // Obtengo el nombre de la columna que contiene las respuestas a cada una de las preguntas
-                $column = $surveyid."X".$gid."X".$qid;
-                $query_code_answ = "SELECT code FROM ANSWERS WHERE qid=".$qid;
-                $result_query_code_answ = Yii::app()->db->createCommand($query_code_answ)->queryAll();
-                $answer_question = array();
-                $sum = 0;
-                for ($i=0; $i < sizeof($result_query_code_answ); $i++) { 
-                
-                    // Obtengo el codigo de la pregunta
-                    $code_answ = $result_query_code_answ[$i]['code'];
-                    // Creo la consulta para contar la cantidad de veces que se selecciona una respuesta.
-                    $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE \"$column\" = '$code_answ' ";
-                    // Obtengo el número de la consulta anterior
-                    $result = Yii::app()->db->createCommand($query)->queryScalar();
-                    $answer['code'] = $code_answ;
-                    $answer['count'] = $result;
-                    // Calculo el valor final dado los pesos de las respuestas.
-                    if($i == 0){
-                        $answer['final_value'] = $answer['count'] * 5;
-                    }else if($i == 1){
-                        $answer['final_value'] = $answer['count'] * 3;
-                    }else if($i == 2){
-                        $answer['final_value'] = $answer['count'];
+        $mapadepreguntas=createFieldMap($surveyid, "full", true, false, $language);
+        $cabecera_impresa = false;
+        $qid_anterior = '';
+        foreach ($mapadepreguntas as $llave => $valor):
+            if($valor['qid'] != $qid_anterior){
+                $qid_anterior = $valor['qid'];
+                $cabecera_impresa = false;
+            }
+            // A : Matriz (Elegir del 1 al 5) 
+            if($valor['type'] == "A"):
+                // Coloco el texto de la pregunta en la columna 0.
+                if($activar_excel){
+                    if(!$cabecera_impresa){
+                        $this->xlsRow++;
+                        $this->xlsRow++;
+                        $this->xlsRow++;
+                        $texto_pregunta = $this->textoLimpio($valor['question']);
+                        $this->sheet->write($this->xlsRow,0,$texto_pregunta, $justificado_negrita);
+                        $this->setupMergeCells($this->xlsRow, 0, $this->xlsRow + 2, 3, $justificado_negrita, $this->sheet);
+                        $this->sheet->write($this->xlsRow,4,"CALIFICACIÓN", $centrado_negrita);
+                        $this->setupMergeCells($this->xlsRow, 4, $this->xlsRow , 13, $centrado_negrita, $this->sheet);
+                        $this->xlsRow++;
+                        $numero = 5;
+                        $i_respuesta = 4;
+                        while ($i_respuesta < 14) {
+                            $this->sheet->write($this->xlsRow,$i_respuesta,"$numero", $centrado_negrita);
+                            $this->setupMergeCells($this->xlsRow, $i_respuesta, $this->xlsRow, $i_respuesta+1, $centrado_negrita, $this->sheet);
+                            $this->sheet->write($this->xlsRow + 1,$i_respuesta,"fi",$centrado_negrita);
+                            $this->sheet->write($this->xlsRow + 1,$i_respuesta+1,"hi",$centrado_negrita);
+                            $numero--;
+                            $i_respuesta += 2;
+                        }
+                        $this->xlsRow++;
+                        $cabecera_impresa = true;
                     }
-                    // Realizo la suma de los valores finales para luego hacer el promedio.
-                    $sum = $sum + $answer['final_value'];
-                    $answer_question[] = $answer;
-                } // Close for
-                $answer_question['average'] = sprintf("%01.2f", $sum / $total_answers);
-                $sum_total = $sum_total + $answer_question['average'];
-                $tablePDF[] = array($j,$valueq['question'], $answer_question['average']);
-                $answers[] = $answer_question;
-                $j++;
-            //Yii::trace(CVarDumper::dumpAsString($value), 'vardump');
-        } // Close foreach
-        //$oldStyle = $this->pdf->FontStyle;
-        
-        $tablePDF[] = array("--","PROMEDIO TOTAL", sprintf("%01.2f", $sum_total/sizeof($result_query_qids_survey)));
-       
-       
+                    $this->xlsRow++;
+                    $sub_pregunta = $this->textoLimpio($valor['subquestion']);
+                    $this->sheet->write($this->xlsRow,0,$sub_pregunta, $justificado);
+                    $this->setupMergeCells($this->xlsRow, 0, $this->xlsRow, 3, $justificado, $this->sheet);
+                    $i_respuesta = 4;
+                    for ($i=1; $i <= 5; $i++) { 
+                        $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE " . Yii::app()->db->quoteColumnName($valor['fieldname'])." = '$i' AND submitdate is not null ";
+                        $cantidad = Yii::app()->db->createCommand($query)->queryScalar();
+                        $this->sheet->writeNumber($this->xlsRow,$i_respuesta,$cantidad, $centrado);
+                        $this->sheet->writeNumber($this->xlsRow,$i_respuesta+1,$cantidad/$total, $this->xlsPercents);
+                        $i_respuesta += 2;
+                    }
+                }
+            endif; // End if Type A : Matriz (Elegir del 1 al 5) 
 
-        // Incrusto la tabla con los valores obtenidos.
-        $this->pdf->headTable($headPDF,$tablePDF);
-        $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], 'B', $aPdfLanguageSettings['pdffontsize']);
-        $this->pdf->tableintopdf( array(array("","PROMEDIO TOTAL", sprintf("%01.2f", $sum_total/sizeof($result_query_qids_survey)))));
-        $this->pdf->SetFont($aPdfLanguageSettings['pdffont'], '', $aPdfLanguageSettings['pdffontsize']);
-        // Se finaliza el pdf y se le asigna el nombre para que lo puedan guardar
-        $this->pdf->lastPage();
-        return $this->pdf->Output('EvaluacionDocente_'.$surveyid."_".$surveyInfo['surveyls_title'].'.pdf');
+            // F : Matriz Personalizada
+            if($valor['type'] == "F"):
+                $qid = $valor['qid'];
+                if($activar_excel){
+                    if(!$cabecera_impresa){
+                        // Consulto las respuestas definidas para la pregunta en cuestion y poder así construir las columnas del excel como esten nombradas las respuestas.
+                        // Ej: 5 - 4 - 3 - 2 - 1 - No sabe/No responde
+                        $query = "SELECT * FROM {{answers}} WHERE " . Yii::app()->db->quoteColumnName("qid")." = '$qid' ORDER BY sortorder ";
+                        $respuestas = Yii::app()->db->createCommand($query)->query();
+                        $this->xlsRow++;
+                        $this->xlsRow++;
+                        $this->xlsRow++;
+                        // Elimino caracteres html, php y saltos de línea que puedan existir en la pregunta.
+                        $texto_pregunta = $this->textoLimpio($valor['question']);
+                        // Escribo la pregunta en el excel.
+                        $this->sheet->write($this->xlsRow,0,$texto_pregunta, $justificado_negrita);
+                        // Combino celdas. 
+                        $this->setupMergeCells($this->xlsRow, 0, $this->xlsRow + 2, 3, $justificado_negrita, $this->sheet);
+                        // Escribo la palabra CALIFICACIÓN en el excel.
+                        $this->sheet->write($this->xlsRow,4,"CALIFICACIÓN", $centrado_negrita);
+                        // Combino las celdas para que la palabra anterior ocupe el ancho total que tendra la tabla, partiendo desde la celda 4.
+                        $this->setupMergeCells($this->xlsRow, 4, $this->xlsRow , (count($respuestas) * 2) + 3, $centrado_negrita, $this->sheet);
+                        $this->xlsRow++;
+                        // indicar que comience a escribir desde la columna 4, debido a que las columnas anteriores ya están ocupadas con la descripción de la pregunta en cuestión.
+                        $i_respuesta = 4;
+                        foreach ($respuestas->readAll() as $respuesta){
+                            // Escribo el texto que tenga la respuesta
+                            $this->sheet->write($this->xlsRow,$i_respuesta,$respuesta['answer'], $centrado_negrita);
+                            // Combino la respueda a 2 celdas horizontalmente, para que debajo esté fi y hi
+                            $this->setupMergeCells($this->xlsRow, $i_respuesta, $this->xlsRow, $i_respuesta+1, $centrado_negrita, $this->sheet);
+                            // Escribo fi
+                            $this->sheet->write($this->xlsRow + 1,$i_respuesta,"fi",$centrado_negrita);
+                            // Escribo hi
+                            $this->sheet->write($this->xlsRow + 1,$i_respuesta+1,"hi",$centrado_negrita);
+                            $i_respuesta += 2;
+                        }
+                        $this->xlsRow++;
+                        // Indico que se ha impreso la cabecera de la pregunta, para que no se vuelva a repetir la cabecera al iterar nuevamente.
+                        $cabecera_impresa = true;
+                    }
+                    $this->xlsRow++;
+                    // Vuelvo a realizar la consulta, debido a que la primera vez entra a escribir las cabeceras, la variable $respestas ha sido recorrida completamente y ha quedado vacía, entonces no habrán datos para imprimir en las respuestas, por eso se consulta de nuevo.
+                    $query = "SELECT * FROM {{answers}} WHERE " . Yii::app()->db->quoteColumnName("qid")." = '$qid' ORDER BY sortorder ";
+                    $respuestas = Yii::app()->db->createCommand($query)->query();
+                    // Escribo la subpregunta de la pregunta en cuestion, serán las filas de la tabla.
+                    $sub_pregunta = $this->textoLimpio($valor['subquestion']);
+                    $this->sheet->write($this->xlsRow,0,$sub_pregunta, $justificado);
+                    // Combino las celdas para que sean iguales a las celdas de la descripción de la pregunta.
+                    $this->setupMergeCells($this->xlsRow, 0, $this->xlsRow, 3, $justificado, $this->sheet);
+                    $i_respuesta = 4;
+                    foreach ($respuestas->readAll() as $respuesta){
+                        $r_code = $respuesta['code'];
+                        $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE " . Yii::app()->db->quoteColumnName($valor['fieldname'])." = '$r_code' AND submitdate is not null ";
+                        $cantidad = Yii::app()->db->createCommand($query)->queryScalar();
+                        $this->sheet->write($this->xlsRow,$i_respuesta,$cantidad, $centrado);
+                        $this->sheet->write($this->xlsRow,$i_respuesta+1,$cantidad/$total, $this->xlsPercents);
+                        $i_respuesta += 2;
+                    }
+                }
+            endif; // End if Type F :  Matriz (Elegir del 1 al 5) 
+
+            // L : Lista (Radio)
+            if($valor['type'] == "L" || $valor['type'] == "!"):
+                $qid = $valor['qid'];
+                if($activar_excel){
+                    // Consulto las respuestas definidas para la pregunta en cuestion y poder así construir las filas del excel como esten nombradas las respuestas.
+                    // Ej: SI - NO - NO SABE
+                    $query = "SELECT * FROM {{answers}} WHERE " . Yii::app()->db->quoteColumnName("qid")." = '$qid' ORDER BY sortorder ";
+                    $respuestas = Yii::app()->db->createCommand($query)->query();
+                    if(!$cabecera_impresa){
+                        $this->xlsRow++;
+                        $this->xlsRow++;
+                        $this->xlsRow++;
+                        // Elimino caracteres html, php y saltos de línea que puedan existir en la pregunta.
+                        $texto_pregunta = $this->textoLimpio($valor['question']);
+                        // Escribo la pregunta en el excel.
+                        $this->sheet->write($this->xlsRow,0,$texto_pregunta, $justificado_negrita);
+                        // Combino celdas. 
+                        $this->setupMergeCells($this->xlsRow, 0, $this->xlsRow + 1, 3, $justificado_negrita, $this->sheet);
+                        // Escribo la palabra RESPUESTA en el excel.
+                        $this->sheet->write($this->xlsRow,4,"RESPUESTA", $centrado_negrita);
+                        // Combino las celdas para que la palabra anterior ocupe el ancho total que tendra la tabla, partiendo desde la celda 4.
+                        $this->setupMergeCells($this->xlsRow, 4, $this->xlsRow , 6, $centrado_negrita, $this->sheet);
+                        $this->xlsRow++;
+                        // Escribo fi
+                        $this->sheet->write($this->xlsRow,4,"fi",$centrado_negrita);
+                        // Escribo hi
+                        $this->sheet->write($this->xlsRow,5,"hi",$centrado_negrita);
+                        // Escribo HI
+                        $this->sheet->write($this->xlsRow,6,"HI",$centrado_negrita);
+                        // Indico que se ha impreso la cabecera de la pregunta, para que no se vuelva a repetir la cabecera al iterar nuevamente.
+                        $cabecera_impresa = true;
+                    }
+                    $HI = 0;
+                    foreach ($respuestas->readAll() as $respuesta){
+                        $this->xlsRow++;
+                        $r_code = $respuesta['code'];
+                        // Escribo la respuesta de la pregunta en cuestion, serán las filas de la tabla.
+                        $texto_respuesta = $this->textoLimpio($respuesta['answer']);
+                        $this->sheet->write($this->xlsRow,0,$texto_respuesta, $justificado);
+                        // Combino las celdas para que sean iguales a las celdas de la descripción de la pregunta.
+                        $this->setupMergeCells($this->xlsRow, 0, $this->xlsRow, 3, $justificado, $this->sheet);
+                        $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE " . Yii::app()->db->quoteColumnName($valor['fieldname'])." = '$r_code' AND submitdate is not null ";
+                        $cantidad = Yii::app()->db->createCommand($query)->queryScalar();
+                        $hi = $cantidad/$total;
+                        $HI += $hi;
+                        $this->sheet->write($this->xlsRow,4,$cantidad, $centrado);
+                        $this->sheet->writeNumber($this->xlsRow,5,$hi, $this->xlsPercents);
+                        $this->sheet->writeNumber($this->xlsRow,6,$HI, $this->xlsPercents); 
+                    }
+                }
+            endif; // End if Type L : Lista (Radio)
+
+            // Y : Si/No
+            if($valor['type'] == "Y"):
+                $qid = $valor['qid'];
+                if($activar_excel){
+                    if(!$cabecera_impresa){
+                        $this->xlsRow++;
+                        $this->xlsRow++;
+                        $this->xlsRow++;
+                        // Elimino caracteres html, php y saltos de línea que puedan existir en la pregunta.
+                        $texto_pregunta = $this->textoLimpio($valor['question']);
+                        // Escribo la pregunta en el excel.
+                        $this->sheet->write($this->xlsRow,0,$texto_pregunta, $justificado_negrita);
+                        // Combino celdas. 
+                        $this->setupMergeCells($this->xlsRow, 0, $this->xlsRow + 2, 3, $justificado_negrita, $this->sheet);
+                        // Escribo la palabra RESPUESTA en el excel.
+                        $this->sheet->write($this->xlsRow,4,"RESPUESTA", $centrado_negrita);
+                        // Combino las celdas para que la palabra anterior ocupe el ancho total que tendra la tabla, partiendo desde la celda 4.
+                        $this->setupMergeCells($this->xlsRow, 4, $this->xlsRow , 7, $centrado_negrita, $this->sheet);
+                        $this->xlsRow++;
+                        // Escribo la palabra SI en el excel.
+                        $this->sheet->write($this->xlsRow,4,"SI", $centrado_negrita);
+                        // Combino las celdas para que la palabra anterior ocupe 2 columnas.
+                        $this->setupMergeCells($this->xlsRow, 4, $this->xlsRow , 5, $centrado_negrita, $this->sheet);
+                        // Escribo la palabra NO en el excel.
+                        $this->sheet->write($this->xlsRow,6,"NO", $centrado_negrita);
+                        // Combino las celdas para que la palabra anterior ocupe 2 columnas.
+                        $this->setupMergeCells($this->xlsRow, 6, $this->xlsRow , 7, $centrado_negrita, $this->sheet);
+                        $this->xlsRow++;
+                        $i_respuesta = 4;
+                        while ($i_respuesta < 8) {
+                            $this->sheet->write($this->xlsRow,$i_respuesta,"fi",$centrado_negrita);
+                            $this->sheet->write($this->xlsRow,$i_respuesta+1,"hi",$centrado_negrita);
+                            $i_respuesta += 2;
+                        }
+                        // Indico que se ha impreso la cabecera de la pregunta, para que no se vuelva a repetir la cabecera al iterar nuevamente.
+                        $cabecera_impresa = true;
+                    }
+                    $this->xlsRow++;
+                    $this->sheet->write($this->xlsRow,0,"RESPUESTA SELECCIONADA", $justificado);
+                    // Combino las celdas para que sean iguales a las celdas de la descripción de la pregunta.
+                    $this->setupMergeCells($this->xlsRow, 0, $this->xlsRow, 3, $justificado, $this->sheet);
+                    // Escribo debajo de fi y hi para la opción de respuesta Y (Si)
+                    $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE " . Yii::app()->db->quoteColumnName($valor['fieldname'])." = 'Y' AND submitdate is not null ";
+                    $cantidad_si = Yii::app()->db->createCommand($query)->queryScalar();
+                    $this->sheet->writeNumber($this->xlsRow,4,$cantidad_si, $centrado);
+                    $this->sheet->writeNumber($this->xlsRow,5,$cantidad_si/$total, $this->xlsPercents);
+                    // Escribo debajo de fi y hi para la opción de respuesta N (No)
+                    $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE " . Yii::app()->db->quoteColumnName($valor['fieldname'])." = 'N' AND submitdate is not null ";
+                    $cantidad_no = Yii::app()->db->createCommand($query)->queryScalar();
+                    $this->sheet->writeNumber($this->xlsRow,6,$cantidad_no, $centrado);
+                    $this->sheet->writeNumber($this->xlsRow,7,$cantidad_no/$total, $this->xlsPercents);
+                }
+            endif;
+        endforeach; // Enf Foreach $mapapreguntas
+        if($activar_excel){
+            $this->workbook->send('statistic-survey'.$surveyid.'.xls');
+            if(!$this->workbook->close())
+                tracevar($this->workbook);
+            exit;
+        }
+        return;
+    }
+
+    /**
+     * Función que permite realizar la combinación de celdas aplicando un estilo particular a cada una.
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - ASNT - 25/11/2016 
+     * @param  int $sRow   Fila inicial.
+     * @param  int $sCol   Columna inicial.
+     * @param  int $eRow   Fila final.
+     * @param  int $eCol   Columna final.
+     * @param  object $fStyle Estilo a aplicar a la columna, definido por $this->workbook->addFormat();  
+     * @param  object $sheet   Hoja de trabajo actual.
+     * @return void         Realiza la combinación de las celdas con el estilo en cada una de ellas definido por el parámetro.
+     */
+    private function setupMergeCells($sRow, $sCol, $eRow, $eCol, $fStyle, $sheet){
+        $sheet->mergeCells($sRow, $sCol, $eRow, $eCol);
+        for($i = $sRow; $i <=$eRow; $i++){
+            for($j = $sCol; $j <= $eCol; $j++){
+                $sheet->write($i,$j,'',$fStyle);
+            }
+        }
+    }
+
+    /**
+     * Función que permite eliminar etiquetas html, php y saltos de línea de un String.
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - ASNT - 25/11/2016 
+     * @param  string $texto Texto a limpiar.
+     * @return string        Retorna el texto limpio de etiquietas html, php y saltos de línea.
+     */
+    private function textoLimpio($texto){
+        $texto = strip_tags($texto);
+        $texto = preg_replace("/\r\n+|\r+|\n+|\t+/i", " ", $texto);
+        $texto = trim($texto);
+        return $texto;
     }
 
 }

@@ -658,29 +658,29 @@ class statistics extends Survey_Common_Action {
      * Render satistics for users
      */
      public function simpleStatistics($surveyid)
-     {
-         $usegraph=1;
-         $iSurveyId =  sanitize_int($surveyid);
-         $aData['surveyid'] = $iSurveyId;
-         $showcombinedresults = 0;
-         $maxchars = 50;
-         $statisticsoutput ='';
-         $cr_statisticsoutput = '';
+    {
+        $usegraph=1;
+        $iSurveyId =  sanitize_int($surveyid);
+        $aData['surveyid'] = $iSurveyId;
+        $showcombinedresults = 0;
+        $maxchars = 50;
+        $statisticsoutput ='';
+        $cr_statisticsoutput = '';
 
-         // Set language for questions and answers to base language of this survey
-         $language = Survey::model()->findByPk($surveyid)->language;
-         $summary = array();
-         $summary[0] = "datestampE";
-         $summary[1] = "datestampG";
-         $summary[2] = "datestampL";
-         $summary[3] = "idG";
-         $summary[4] = "idL";
+        // Set language for questions and answers to base language of this survey
+        $language = Survey::model()->findByPk($surveyid)->language;
+        $summary = array();
+        $summary[0] = "datestampE";
+        $summary[1] = "datestampG";
+        $summary[2] = "datestampL";
+        $summary[3] = "idG";
+        $summary[4] = "idL";
 
-         // 1: Get list of questions from survey
-         $rows = Question::model()->getQuestionList($surveyid, $language);
+        // 1: Get list of questions from survey
+        $rows = Question::model()->getQuestionList($surveyid, $language);
 
-         //SORT IN NATURAL ORDER!
-         usort($rows, 'groupOrderThenQuestionOrder');
+        //SORT IN NATURAL ORDER!
+        usort($rows, 'groupOrderThenQuestionOrder');
 
         // The questions to display (all question)
         foreach($rows as $row)
@@ -800,7 +800,7 @@ class statistics extends Survey_Common_Action {
         App()->getClientScript()->registerScriptFile( App()->getAssetManager()->publish( ADMIN_SCRIPT_PATH . 'statistics.js' ));
         App()->getClientScript()->registerScriptFile( App()->getAssetManager()->publish( ADMIN_SCRIPT_PATH . 'json-js/json2.min.js'));
         echo $this->_renderWrappedTemplate('export', 'statistics_user_view', $aData);
-     }
+    }
 
     /**
      * Renders template(s) wrapped in header and footer
@@ -834,34 +834,44 @@ class statistics extends Survey_Common_Action {
     }
 
     /**
-     * Función que permite exportar las estadísticas de la evaluación docente
+     * Función que permite exportar las estadísticas de una encuesta, en el formato solicitado por
+     * La oficina de calidad.
+     * @author ANDRÉS DAVID MONTOYA AGUIRRE - ASNT - 25/11/2016 
      * @param  int $surveyid Identificador único de la encuesta.
      * @return void           Muestra el pdf con las estadísticas de la evaluación docente.
      */
-    public function exportteacherevaluation($surveyid){
-        //Yii::trace(CVarDumper::dumpAsString($variable), 'vardump');
+    public function exportqualityformatresults($surveyid){
         $surveyid = sanitize_int($surveyid);
+        $query = "SELECT count(*) FROM {{survey_$surveyid}} WHERE submitdate is not null";
+        $total = Yii::app()->db->createCommand($query)->queryScalar();
+        if($total == 0){
+            Yii::app()->setFlashMessage("La encuesta posee 0 respuestas completas, por lo tanto no es posible generar estadísticas.",'error');
+            $this->getController()->redirect(array('admin/survey','sa'=>'view','surveyid'=>$surveyid));
+            die;
+        }
+        $statlang = "es";
+        $summary = array();
+        $criteria = new CDbCriteria();
+        $criteria->condition = 'sid = :sid ';
+        $criteria->params = array(':sid'=>$surveyid);
+        $questions = Question::model()->findAll($criteria);
+        foreach ($questions as $row) {
+            $code_question = $surveyid."X".$row->gid."X".$row->qid;
+            if($row->parent_qid != 0){
+                $code_question .= $row->title;
+            }
+            $summary[] = $code_question;
+        }
         //no survey ID? -> come and get one
         if (!isset($surveyid)) {
             $surveyid=returnGlobal('sid');
         }
-        $aData['surveyid'] = $surveyid;
-        // Set language for questions and answers to base language of this survey
-        $language = Survey::model()->findByPk($surveyid)->language;
-        $aData['language'] = $language;
-        //Select public language file
-        $row  = Survey::model()->find('sid = :sid', array(':sid' => $surveyid));
-        //Yii::trace(CVarDumper::dumpAsString($row), 'vardump');
-         //store all the data in $rows
-        $rows = Question::model()->getQuestionList($surveyid, $language);
-         //SORT IN NATURAL ORDER!
-        usort($rows, 'groupOrderThenQuestionOrder');
-        //Yii::trace(CVarDumper::dumpAsString($rows), 'vardump');
+        $usegraph=isset($_POST['usegraph']) ? 1 : 0;
+        $outputType = 'xls';
         Yii::app()->loadHelper('admin/statistics');
         $helper = new statistics_helper();
-        $helper->generate_statistics_teacher_evaluation($surveyid);
+        $helper->generate_statistics_quality_format($surveyid,$summary,$summary,$usegraph,$outputType,'DD',$statlang);
         exit;
     }
-
 
 }
