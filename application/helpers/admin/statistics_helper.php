@@ -4334,7 +4334,6 @@ class statistics_helper {
                 unset($outputs);
                 unset($display);
             }    // end foreach -> loop through all questions
-            die;
             //output
             if($outputType=='html')
             $sOutputHTML .= "<br />&nbsp;\n";
